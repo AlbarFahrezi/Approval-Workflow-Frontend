@@ -46,53 +46,72 @@ export default function LoginForm() {
   });
 
   const onSubmit = async (values: LoginFormValues) => {
-    try {
-      const response = await login(values);
+  try {
+    const response = await login(values);
 
-      if (!response.success) {
-        toast.error(response.message || "Login gagal.");
-        return;
-      }
+    console.log("========== LOGIN RESPONSE ==========");
+    console.log(response);
 
-      const token =
-        response.data?.token ||
-        response.data?.access_token ||
-        (response.data as { accessToken?: string })?.accessToken;
-
-      if (!token) {
-        toast.error("Token login tidak ditemukan.");
-        return;
-      }
-
-      localStorage.setItem("approval_token", token);
-      localStorage.setItem(
-        "approval_user",
-        JSON.stringify(response.data.user)
-      );
-      localStorage.setItem(
-        "approval_remember_me",
-        String(rememberMe)
-      );
-
-      toast.success(response.message || "Login berhasil.");
-      router.replace("/dashboard");
-    } catch (error: unknown) {
-      const axiosError = error as {
-        response?: {
-          data?: {
-            message?: string;
-          };
-        };
-        message?: string;
-      };
-
-      toast.error(
-        axiosError.response?.data?.message ||
-          axiosError.message ||
-          "Tidak dapat terhubung ke server."
-      );
+    if (!response.success) {
+      toast.error(response.message || "Login gagal.");
+      return;
     }
-  };
+
+    const token = response.data.token;
+
+    if (!token) {
+      console.error("TOKEN TIDAK ADA");
+      toast.error("Token login tidak ditemukan.");
+      return;
+    }
+
+    // Simpan token
+    localStorage.setItem("approval_token", token);
+
+    // Simpan user
+    localStorage.setItem(
+      "approval_user",
+      JSON.stringify(response.data.user)
+    );
+
+    // Remember Me
+    localStorage.setItem(
+      "approval_remember_me",
+      String(rememberMe)
+    );
+
+    console.log("========== LOCAL STORAGE ==========");
+    console.log(
+      "TOKEN:",
+      localStorage.getItem("approval_token")
+    );
+    console.log(
+      "USER:",
+      localStorage.getItem("approval_user")
+    );
+
+    toast.success(response.message || "Login berhasil.");
+
+    router.replace("/dashboard");
+  } catch (error: unknown) {
+    console.error(error);
+
+    const axiosError = error as {
+      response?: {
+        data?: {
+          message?: string;
+        };
+      };
+      message?: string;
+    };
+
+    toast.error(
+      axiosError.response?.data?.message ||
+        axiosError.message ||
+        "Tidak dapat terhubung ke server."
+    );
+  }
+};
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="w-full">
