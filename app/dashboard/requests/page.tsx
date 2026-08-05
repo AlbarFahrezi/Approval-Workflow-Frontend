@@ -41,7 +41,12 @@ export default function RequestsPage() {
       const data =
         await getApprovalRequests();
 
+        console.log("DATA DARI API");
+        console.log(data);
+
       setRequests(data);
+
+      
     } catch (error) {
       console.error(error);
 

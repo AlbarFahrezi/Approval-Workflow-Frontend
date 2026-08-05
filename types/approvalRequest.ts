@@ -18,5 +18,6 @@ export interface ApprovalRequest {
   user?: {
     id: number;
     name: string;
+    email?: string;
   };
 }
