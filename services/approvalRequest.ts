@@ -135,3 +135,29 @@ export async function rejectApprovalRequest(
 
   return response.data;
 }
+
+export async function getApprovalTimeline(
+  id: number
+) {
+  const response = await api.get(
+    `/approval-requests/${id}/timeline`
+  );
+
+  console.log("TIMELINE");
+  console.log(response.data);
+
+  return response.data.data;
+}
+
+export async function getApprovalHistory(
+  id: number
+) {
+  const response = await api.get(
+    `/approval-requests/${id}/history`
+  );
+
+  console.log("HISTORY");
+  console.log(response.data);
+
+  return response.data.data;
+}

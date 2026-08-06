@@ -4,6 +4,7 @@ import Image from "next/image";
 import LoginForm from "@/components/auth/LoginForm";
 import { useRef } from "react";
 
+
 const akhlakValues = [
   "Amanah",
   "Kompeten",
