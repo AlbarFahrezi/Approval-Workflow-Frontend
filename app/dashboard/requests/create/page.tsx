@@ -45,7 +45,16 @@ export default function CreateRequestPage() {
         "Pengajuan berhasil dibuat."
       );
 
-      router.push("/dashboard/requests");
+    const response = await createApprovalRequest({
+  title,
+  description,
+});
+
+toast.success("Draft berhasil dibuat.");
+
+router.push(
+  `/dashboard/requests/${response.data.id}`
+);
     } catch (err) {
       console.error(err);
 
@@ -142,8 +151,8 @@ export default function CreateRequestPage() {
               <Send size={18} />
 
               {loading
-                ? "Mengirim..."
-                : "Buat Pengajuan"}
+                ? "Menyimpan..."
+                : "Simpan Draft"}
             </button>
 
           </div>

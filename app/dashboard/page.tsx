@@ -30,6 +30,7 @@ import StatisticsChart from "@/components/dashboard/StatisticsChart";
 import ActivityTimeline from "@/components/dashboard/ActivityTimeline";
 import RecentRequests from "@/components/dashboard/RecentRequests";
 import QuickAction from "@/components/dashboard/QuickAction";
+import PendingApproval from "@/components/dashboard/PendingApproval";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -41,6 +42,13 @@ export default function DashboardPage() {
 
   const [recentRequests, setRecentRequests] =
     useState<ApprovalRequest[]>([]);
+
+  const [approvalRequests, setApprovalRequests] =
+    useState<ApprovalRequest[]>([]);
+
+  const pendingCount = approvalRequests.filter(
+    (item) => item.status === "submitted"
+  ).length;
 
   const [loading, setLoading] =
     useState(true);
@@ -57,16 +65,17 @@ export default function DashboardPage() {
 
       const [
         dashboardSummary,
-        approvalRequests,
+        approvalRequestsData,
       ] = await Promise.all([
         getDashboardSummary(),
         getApprovalRequests(),
       ]);
 
       setSummary(dashboardSummary);
+      setApprovalRequests(approvalRequestsData);
 
       setRecentRequests(
-        [...approvalRequests]
+        [...approvalRequestsData]
           .sort(
             (a, b) =>
               new Date(b.created_at).getTime() -
@@ -135,6 +144,8 @@ export default function DashboardPage() {
         user={user}
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        pendingCount={pendingCount}
+         
       />
 
       <div className="lg:pl-72">
@@ -169,7 +180,16 @@ export default function DashboardPage() {
           {/* Summary */}
           <SummaryCards
             summary={summary}
+            role={user.role}
           />
+
+          {user.role === "manager" && (
+            <PendingApproval
+              requests={approvalRequests.filter(
+                (r) => r.status === "submitted"
+              )}
+            />
+          )}
 
           {/* Chart + Timeline */}
           <section className="grid gap-6 xl:grid-cols-[2fr_1fr]">

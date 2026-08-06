@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { logout } from "@/services/auth";
+import type { LucideIcon } from "lucide-react";
 
 type User = {
   name: string;
@@ -21,17 +22,26 @@ type SidebarProps = {
   user?: User;
   open: boolean;
   onClose: () => void;
+  pendingCount?: number;
+};
+
+type MenuItem = {
+  title: string;
+  href: string;
+  icon: LucideIcon;
+  badge?: number;
 };
 
 export default function Sidebar({
   user,
   open,
   onClose,
+  pendingCount = 0,
 }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const menu = [
+  const menu: MenuItem[] = [
     {
       title: "Dashboard",
       href: "/dashboard",
@@ -57,6 +67,7 @@ export default function Sidebar({
       title: "Approval",
       href: "/dashboard/approvals",
       icon: CheckCircle2,
+      badge: pendingCount,
     });
   }
 
@@ -112,14 +123,29 @@ export default function Sidebar({
                   router.push(item.href);
                   onClose();
                 }}
-                className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition ${
+                className={`flex w-full items-center justify-between rounded-xl px-4 py-3 transition ${
                   active
                     ? "bg-[#0B4EA2] text-white"
                     : "text-slate-600 hover:bg-slate-100"
                 }`}
               >
-                <Icon size={19} />
-                {item.title}
+                <div className="flex items-center gap-3">
+                  <Icon size={19} />
+                  {item.title}
+                </div>
+
+                {item.badge !== undefined &&
+                  item.badge > 0 && (
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                        active
+                          ? "bg-white text-[#0B4EA2]"
+                          : "bg-red-500 text-white"
+                      }`}
+                    >
+                      {item.badge}
+                    </span>
+                  )}
               </button>
             );
           })}
