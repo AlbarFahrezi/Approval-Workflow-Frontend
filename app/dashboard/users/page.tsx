@@ -1,15 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2, Plus, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
-import { getUsers } from "@/services/user";
+import {
+  getUsers,
+  deleteUser,
+} from "@/services/user";
+
 import type { User } from "@/types/user";
 
 export default function UsersPage() {
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState(""); 
 
   async function loadUsers() {
     try {
@@ -26,9 +33,39 @@ export default function UsersPage() {
     }
   }
 
+  async function handleDelete(id: number) {
+    const confirmDelete = window.confirm(
+      "Yakin ingin menghapus user ini?"
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      await deleteUser(id);
+
+      toast.success("User berhasil dihapus.");
+
+      await loadUsers();
+    } catch (error) {
+      console.error(error);
+
+      toast.error("Gagal menghapus user.");
+    }
+  }
+
   useEffect(() => {
     loadUsers();
   }, []);
+
+  const filteredUsers = users.filter((user) => {
+    const keyword = search.toLowerCase();
+
+    return (
+      user.name.toLowerCase().includes(keyword) ||
+      user.email.toLowerCase().includes(keyword) ||
+      user.role.toLowerCase().includes(keyword)
+    );
+  });
 
   return (
     <div className="space-y-6">
@@ -58,6 +95,7 @@ export default function UsersPage() {
           </button>
 
           <button
+            onClick={() => router.push("/dashboard/users/create")}
             className="flex items-center gap-2 rounded-xl bg-[#0B4EA2] px-5 py-3 font-semibold text-white hover:bg-[#083d83]"
           >
             <Plus size={18} />
@@ -67,6 +105,16 @@ export default function UsersPage() {
         </div>
 
       </div>
+
+          <div>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Cari user..."
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#0B4EA2]"
+            />
+          </div>
 
       {loading ? (
 
@@ -109,7 +157,7 @@ export default function UsersPage() {
 
             <tbody>
 
-              {users.map((user) => (
+              {filteredUsers.map((user) => (
 
                 <tr
                   key={user.id}
@@ -137,6 +185,7 @@ export default function UsersPage() {
                     </button>
 
                     <button
+                      onClick={() => handleDelete(user.id)}
                       className="rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700"
                     >
                       Delete
