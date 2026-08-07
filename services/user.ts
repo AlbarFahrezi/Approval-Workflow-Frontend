@@ -14,6 +14,7 @@ export async function createUser(payload: {
   name: string;
   email: string;
   password: string;
+  password_confirmation: string;
   role: string;
 }) {
   const response = await api.post("/users", payload);
