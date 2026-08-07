@@ -179,6 +179,9 @@ export default function UsersPage() {
                   <td className="space-x-2 px-6 py-4 text-center">
 
                     <button
+                      onClick={() =>
+                        router.push(`/dashboard/users/${user.id}/edit`)
+                      }
                       className="rounded-lg bg-yellow-500 px-4 py-2 text-white hover:bg-yellow-600"
                     >
                       Edit
