@@ -27,6 +27,8 @@ export async function updateUser(
     name: string;
     email: string;
     role: string;
+    password?: string;
+    password_confirmation?: string;
   }
 ) {
   const response = await api.put(`/users/${id}`, payload);

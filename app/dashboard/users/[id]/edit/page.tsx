@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -16,6 +17,7 @@ export default function EditUserPage() {
   const id = Number(params.id);
 
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -45,7 +47,14 @@ export default function EditUserPage() {
   ) {
     e.preventDefault();
 
+    if (!name || !email) {
+      toast.error("Nama dan Email wajib diisi.");
+      return;
+    }
+
     try {
+      setSaving(true);
+
       await updateUser(id, {
         name,
         email,
@@ -59,13 +68,18 @@ export default function EditUserPage() {
       console.error(error);
 
       toast.error("Gagal mengupdate user.");
+    } finally {
+      setSaving(false);
     }
   }
 
   if (loading) {
     return (
-      <div className="p-10">
-        Loading...
+      <div className="flex h-72 items-center justify-center">
+        <Loader2
+          size={30}
+          className="animate-spin text-[#0B4EA2]"
+        />
       </div>
     );
   }
@@ -78,48 +92,50 @@ export default function EditUserPage() {
           Edit User
         </h1>
 
-        <p className="text-slate-500">
+        <p className="mt-1 text-slate-500">
           Perbarui data user.
         </p>
       </div>
 
       <form
         onSubmit={handleSubmit}
-        className="space-y-5 rounded-2xl bg-white p-8 shadow"
+        className="space-y-5 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm"
       >
 
         <div>
-
-          <label>Nama</label>
+          <label className="mb-2 block font-semibold">
+            Nama
+          </label>
 
           <input
             value={name}
-            onChange={(e)=>setName(e.target.value)}
-            className="mt-2 w-full rounded-xl border p-3"
+            onChange={(e) => setName(e.target.value)}
+            className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#0B4EA2]"
           />
-
         </div>
 
         <div>
-
-          <label>Email</label>
+          <label className="mb-2 block font-semibold">
+            Email
+          </label>
 
           <input
+            type="email"
             value={email}
-            onChange={(e)=>setEmail(e.target.value)}
-            className="mt-2 w-full rounded-xl border p-3"
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#0B4EA2]"
           />
-
         </div>
 
         <div>
-
-          <label>Role</label>
+          <label className="mb-2 block font-semibold">
+            Role
+          </label>
 
           <select
             value={role}
-            onChange={(e)=>setRole(e.target.value)}
-            className="mt-2 w-full rounded-xl border p-3"
+            onChange={(e) => setRole(e.target.value)}
+            className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#0B4EA2]"
           >
             <option value="employee">
               Employee
@@ -132,25 +148,24 @@ export default function EditUserPage() {
             <option value="admin">
               Admin
             </option>
-
           </select>
-
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex justify-end gap-3">
 
           <button
             type="button"
-            onClick={()=>router.back()}
-            className="rounded-xl border px-6 py-3"
+            onClick={() => router.back()}
+            className="rounded-xl border border-slate-200 px-6 py-3 hover:bg-slate-100"
           >
             Batal
           </button>
 
           <button
-            className="rounded-xl bg-blue-700 px-6 py-3 text-white"
+            disabled={saving}
+            className="rounded-xl bg-[#0B4EA2] px-6 py-3 font-semibold text-white hover:bg-[#083d83] disabled:opacity-60"
           >
-            Simpan
+            {saving ? "Menyimpan..." : "Simpan"}
           </button>
 
         </div>
