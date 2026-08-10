@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -9,22 +10,72 @@ import {
   Tooltip,
 } from "recharts";
 
-const data = [
-  { month: "Jan", total: 8 },
-  { month: "Feb", total: 14 },
-  { month: "Mar", total: 19 },
-  { month: "Apr", total: 13 },
-  { month: "Mei", total: 25 },
-  { month: "Jun", total: 21 },
-  { month: "Jul", total: 32 },
+import { getApprovalRequests } from "@/services/approvalRequest";
+import type { ApprovalRequest } from "@/types/approvalRequest";
+
+type ChartData = {
+  month: string;
+  total: number;
+};
+
+const monthNames = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "Mei",
+  "Jun",
+  "Jul",
+  "Agu",
+  "Sep",
+  "Okt",
+  "Nov",
+  "Des",
 ];
 
 export default function StatisticsChart() {
+  const [data, setData] = useState<ChartData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadChart() {
+      try {
+        const requests: ApprovalRequest[] =
+          await getApprovalRequests();
+
+        const currentYear = new Date().getFullYear();
+
+        const monthlyData: ChartData[] =
+          monthNames.map((month, index) => ({
+            month,
+            total: requests.filter((request) => {
+              const date = new Date(request.created_at);
+
+              return (
+                date.getFullYear() === currentYear &&
+                date.getMonth() === index
+              );
+            }).length,
+          }));
+
+        setData(monthlyData);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadChart();
+  }, []);
+
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+
+      <div className="flex items-center justify-between">
+
         <div>
-          <h2 className="text-lg font-semibold text-slate-800">
+          <h2 className="text-xl font-bold text-slate-900">
             Approval Statistics
           </h2>
 
@@ -34,54 +85,73 @@ export default function StatisticsChart() {
         </div>
 
         <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-[#0B4EA2]">
-          2026
+          {new Date().getFullYear()}
         </span>
+
       </div>
 
-      <div className="h-[320px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data}>
-            <defs>
-              <linearGradient
-                id="approvalGradient"
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="1"
-              >
-                <stop
-                  offset="0%"
-                  stopColor="#0B4EA2"
-                  stopOpacity={0.45}
-                />
+      <div className="mt-6 h-[320px]">
 
-                <stop
-                  offset="100%"
-                  stopColor="#0B4EA2"
-                  stopOpacity={0}
-                />
-              </linearGradient>
-            </defs>
+        {loading ? (
 
-            <CartesianGrid
-              strokeDasharray="4 4"
-              vertical={false}
-            />
+          <div className="flex h-full items-center justify-center text-sm text-slate-500">
+            Memuat statistik...
+          </div>
 
-            <XAxis dataKey="month" />
+        ) : (
 
-            <Tooltip />
+          <ResponsiveContainer
+            width="100%"
+            height="100%"
+          >
+            <AreaChart data={data}>
 
-            <Area
-              type="monotone"
-              dataKey="total"
-              stroke="#0B4EA2"
-              strokeWidth={3}
-              fill="url(#approvalGradient)"
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+              <defs>
+                <linearGradient
+                  id="approvalGradient"
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <stop
+                    offset="0%"
+                    stopColor="#0B4EA2"
+                    stopOpacity={0.45}
+                  />
+
+                  <stop
+                    offset="100%"
+                    stopColor="#0B4EA2"
+                    stopOpacity={0}
+                  />
+                </linearGradient>
+              </defs>
+
+              <CartesianGrid
+                strokeDasharray="4 4"
+                vertical={false}
+              />
+
+              <XAxis dataKey="month" />
+
+              <Tooltip />
+
+              <Area
+                type="monotone"
+                dataKey="total"
+                stroke="#0B4EA2"
+                strokeWidth={3}
+                fill="url(#approvalGradient)"
+              />
+
+            </AreaChart>
+          </ResponsiveContainer>
+
+        )}
+
       </div>
+
     </div>
   );
 }
