@@ -206,20 +206,20 @@ function buildDescription(
 
   switch (item.to_status) {
     case "submitted":
-      return `${userName} mengirim pengajuan "${request.title}".`;
+      return `${userName} mengirim request "${request.title}".`;
 
     case "approved":
-      return `${userName} menyetujui pengajuan "${request.title}".`;
+      return `${userName} menyetujui request "${request.title}".`;
 
     case "rejected":
-      return `${userName} menolak pengajuan "${request.title}".${
+      return `${userName} menolak request "${request.title}".${
         item.comment
           ? ` Alasan: ${item.comment}`
           : ""
       }`;
 
     default:
-      return `${userName} mengubah status pengajuan "${request.title}".`;
+      return `${userName} mengubah status request "${request.title}".`;
   }
 }
 

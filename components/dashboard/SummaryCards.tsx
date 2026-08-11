@@ -25,7 +25,7 @@ export default function SummaryCards({
       {role === "employee" ? (
         <>
           <StatCard
-            title="Total Pengajuan Saya"
+            title="Total Request Saya"
             value={summary.total_requests}
             icon={<FileText size={22} />}
           />
@@ -51,7 +51,7 @@ export default function SummaryCards({
       ) : (
         <>
           <StatCard
-            title="Total Pengajuan"
+            title="Total Request"
             value={summary.total_requests}
             icon={<FileText size={22} />}
           />

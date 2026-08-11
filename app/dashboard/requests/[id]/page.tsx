@@ -14,6 +14,7 @@
     Trash2,
     Send,
     Loader2,
+    X,
   } from "lucide-react";
   import { toast } from "sonner";
 
@@ -44,12 +45,19 @@
       useState<ApprovalRequest | null>(null);
 
     const [timeline, setTimeline] =
-    useState<any[]>([]);  
-
-    const [history, setHistory] =
     useState<any[]>([]);
 
+  const [history, setHistory] =
+    useState<any[]>([]);
 
+  const [showRejectModal, setShowRejectModal] =
+    useState(false);
+
+  const [rejectComment, setRejectComment] =
+    useState("");
+
+  const [rejectLoading, setRejectLoading] =
+    useState(false);
 
   const currentUser = getStoredUser();
   const currentUserRole = currentUser?.role;
@@ -79,7 +87,7 @@
         console.error(error);
 
         toast.error(
-          "Gagal mengambil detail pengajuan."
+          "Gagal mengambil detail request."
         );
       } finally {
         setLoading(false);
@@ -165,15 +173,18 @@
   async function handleReject() {
     if (!request) return;
 
-    const comment =
-      window.prompt("Alasan reject (opsional)") ?? "";
-
-    if (!window.confirm("Reject request ini?")) {
+    if (!rejectComment.trim()) {
+      toast.error("Alasan reject wajib diisi.");
       return;
     }
 
     try {
-      await rejectApprovalRequest(request.id, comment);
+      setRejectLoading(true);
+
+      await rejectApprovalRequest(
+        request.id,
+        rejectComment.trim()
+      );
 
       const id = request.id;
 
@@ -181,12 +192,16 @@
       setTimeline(await getApprovalTimeline(id));
       setHistory(await getApprovalHistory(id));
 
-      toast.success("Request berhasil direject.");
+      setRejectComment("");
+      setShowRejectModal(false);
 
+      toast.success("Request berhasil direject.");
     } catch (error) {
       console.error(error);
 
       toast.error("Gagal reject request.");
+    } finally {
+      setRejectLoading(false);
     }
   }
 
@@ -209,10 +224,10 @@
         </h2>
 
         <button
-          onClick={() => router.back()}
+          onClick={() => router.push("/dashboard")}
           className="mt-6 rounded-xl bg-[#0B4EA2] px-6 py-3 text-white"
         >
-          Kembali
+          Kembali Ke Dashboard
         </button>
       </div>
     );
@@ -252,15 +267,15 @@
     <div>
 
       <button
-        onClick={() => router.back()}
+        onClick={() => router.push("/dashboard/requests")}
         className="mb-5 inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 hover:bg-slate-100"
       >
         <ArrowLeft size={18} />
-        Kembali
+        Kembali 
       </button>
 
       <h1 className="text-3xl font-bold text-slate-900">
-        Detail Pengajuan
+        Detail Request
       </h1>
 
       <p className="mt-2 text-slate-500">
@@ -304,8 +319,7 @@
     )}
 
     {/* Manager & Admin */}
-    {(currentUserRole === "manager" ||
-    currentUserRole === "admin") && 
+    {currentUserRole === "manager" ||
     request.status === "submitted" && (
       <>
         <button
@@ -317,7 +331,7 @@
         </button>
 
         <button
-          onClick={handleReject}
+          onClick={() => setShowRejectModal(true)}
           className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 font-semibold text-white hover:bg-red-700"
         >
           <XCircle size={18} />
@@ -653,6 +667,145 @@
         )}
 
       </div>
+
+      {showRejectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+
+            {/* Header */}
+            <div className="flex items-start justify-between">
+
+              <div>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
+                    <XCircle
+                      size={22}
+                      className="text-red-600"
+                    />
+                  </div>
+
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-900">
+                      Tolak Request
+                    </h2>
+
+                    <p className="mt-1 text-sm text-slate-500">
+                      Berikan alasan mengapa request ini ditolak.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowRejectModal(false);
+                  setRejectComment("");
+                }}
+                className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+              >
+                <X size={20} />
+              </button>
+
+            </div>
+
+            {/* Request Info */}
+            <div className="mt-6 rounded-xl bg-slate-50 p-4">
+
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                Request
+              </p>
+
+              <p className="mt-1 font-semibold text-slate-800">
+                {request.title}
+              </p>
+
+            </div>
+
+            {/* Comment */}
+            <div className="mt-5">
+
+              <label
+                htmlFor="reject-comment"
+                className="mb-2 block text-sm font-semibold text-slate-700"
+              >
+                Alasan Penolakan
+              </label>
+
+              <textarea
+                id="reject-comment"
+                value={rejectComment}
+                onChange={(e) =>
+                  setRejectComment(e.target.value)
+                }
+                rows={5}
+                maxLength={500}
+                placeholder="Contoh: Pengajuan belum sesuai kebutuhan dan perlu diperbaiki."
+                className="w-full resize-none rounded-xl border border-slate-200 p-4 text-sm outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                autoFocus
+              />
+
+              <div className="mt-2 flex justify-between">
+
+                <p className="text-xs text-slate-400">
+                  Alasan akan disimpan pada approval history.
+                </p>
+
+                <p className="text-xs text-slate-400">
+                  {rejectComment.length}/500
+                </p>
+
+              </div>
+
+            </div>
+
+            {/* Actions */}
+            <div className="mt-6 flex justify-end gap-3">
+
+              <button
+                type="button"
+                disabled={rejectLoading}
+                onClick={() => {
+                  setShowRejectModal(false);
+                  setRejectComment("");
+                }}
+                className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-50"
+              >
+                Batal
+              </button>
+
+              <button
+                type="button"
+                disabled={
+                  rejectLoading ||
+                  !rejectComment.trim()
+                }
+                onClick={handleReject}
+                className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+
+                {rejectLoading ? (
+                  <>
+                    <Loader2
+                      size={18}
+                      className="animate-spin"
+                    />
+                    Menolak...
+                  </>
+                ) : (
+                  <>
+                    <XCircle size={18} />
+                    Tolak Request
+                  </>
+                )}
+
+              </button>
+
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
     );
   }

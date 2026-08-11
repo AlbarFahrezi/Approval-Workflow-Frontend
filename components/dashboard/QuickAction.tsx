@@ -24,7 +24,7 @@ export default function QuickAction({
           </p>
 
           <h3 className="mt-2 text-lg font-semibold">
-            Buat Pengajuan
+            Buat Request
           </h3>
 
           <p className="mt-2 text-sm text-slate-500">
@@ -48,7 +48,7 @@ export default function QuickAction({
           </p>
 
           <h3 className="mt-2 text-lg font-semibold">
-            Semua Pengajuan
+            Semua Request
           </h3>
 
           <p className="mt-2 text-sm text-slate-500">

@@ -39,7 +39,7 @@ export default function RequestTable({
   if (requests.length === 0) {
     return (
       <div className="flex h-64 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500">
-        Belum ada data pengajuan.
+        Belum ada data Request.
       </div>
     );
   }

@@ -198,7 +198,7 @@ export default function LoginPage() {
               </h1>
 
               <p className="dahana-description mt-3 max-w-lg text-[13px] leading-6 text-[#c5d9e4]/70">
-                Platform internal untuk mengelola pengajuan,
+                Platform internal untuk mengelola request,
                 persetujuan, dan riwayat proses secara
                 terintegrasi.
               </p>

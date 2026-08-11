@@ -172,7 +172,7 @@ export default function DashboardPage() {
 
             <p className="mt-3 text-sm leading-6 text-slate-500">
               Pantau seluruh aktivitas approval,
-              pengajuan, dan proses persetujuan
+              requests, dan proses persetujuan
               secara realtime.
             </p>
           </section>

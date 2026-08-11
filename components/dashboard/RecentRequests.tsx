@@ -27,7 +27,7 @@ export default function RecentRequests({
       <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
         <div>
           <h2 className="text-lg font-semibold text-slate-900">
-            Pengajuan Terbaru
+            Requests Terbaru
           </h2>
 
           <p className="text-sm text-slate-500">

@@ -48,12 +48,12 @@ export default function Sidebar({
       icon: LayoutDashboard,
     },
     {
-      title: "Pengajuan",
+      title: "Requests",
       href: "/dashboard/requests",
       icon: FileText,
     },
     {
-      title: "Buat Pengajuan",
+      title: "Buat Request",
       href: "/dashboard/requests/create",
       icon: Plus,
     },
