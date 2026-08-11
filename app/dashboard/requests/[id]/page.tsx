@@ -319,7 +319,7 @@
     )}
 
     {/* Manager & Admin */}
-    {currentUserRole === "manager" ||
+    {currentUserRole === "manager" &&
     request.status === "submitted" && (
       <>
         <button
