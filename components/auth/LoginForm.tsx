@@ -34,6 +34,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginForm() {
   const router = useRouter();
+
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
@@ -46,77 +47,178 @@ export default function LoginForm() {
   });
 
   const onSubmit = async (values: LoginFormValues) => {
-  try {
-    const response = await login(values);
+    try {
+      console.log("========== LOGIN START ==========");
+      console.log("EMAIL:", values.email);
 
-    console.log("========== LOGIN RESPONSE ==========");
-    console.log(response);
+      const response = await login(values);
 
-    if (!response.success) {
-      toast.error(response.message || "Login gagal.");
-      return;
-    }
+      console.log("========== LOGIN RESPONSE ==========");
+      console.log(response);
 
-    const token = response.data.token;
+      if (!response.success) {
+        toast.error(response.message || "Login gagal.");
+        return;
+      }
 
-    if (!token) {
-      console.error("TOKEN TIDAK ADA");
-      toast.error("Token login tidak ditemukan.");
-      return;
-    }
+      /*
+      |--------------------------------------------------------------------------
+      | AMBIL TOKEN
+      |--------------------------------------------------------------------------
+      */
 
-    // Simpan token
-    localStorage.setItem("approval_token", token);
+      const token =
+        response.data.token ??
+        response.data.access_token ??
+        null;
 
-    // Simpan user
-    localStorage.setItem(
-      "approval_user",
-      JSON.stringify(response.data.user)
-    );
+      if (!token) {
+        console.error(
+          "TOKEN LOGIN TIDAK DITEMUKAN:",
+          response.data
+        );
 
-    // Remember Me
-    localStorage.setItem(
-      "approval_remember_me",
-      String(rememberMe)
-    );
+        toast.error(
+          "Token login tidak ditemukan dari server."
+        );
 
-    console.log("========== LOCAL STORAGE ==========");
-    console.log(
-      "TOKEN:",
-      localStorage.getItem("approval_token")
-    );
-    console.log(
-      "USER:",
-      localStorage.getItem("approval_user")
-    );
+        return;
+      }
 
-    toast.success(response.message || "Login berhasil.");
+      /*
+      |--------------------------------------------------------------------------
+      | AMBIL USER
+      |--------------------------------------------------------------------------
+      */
 
-    router.replace("/dashboard");
-  } catch (error: unknown) {
-    console.error(error);
+      const user = response.data.user;
 
-    const axiosError = error as {
-      response?: {
-        data?: {
-          message?: string;
+      if (!user) {
+        console.error(
+          "USER LOGIN TIDAK DITEMUKAN:",
+          response.data
+        );
+
+        toast.error(
+          "Data user tidak ditemukan dari server."
+        );
+
+        return;
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | SIMPAN AUTH DATA
+      |--------------------------------------------------------------------------
+      */
+
+      window.localStorage.setItem(
+        "approval_token",
+        token
+      );
+
+      window.localStorage.setItem(
+        "approval_user",
+        JSON.stringify(user)
+      );
+
+      window.localStorage.setItem(
+        "approval_remember_me",
+        String(rememberMe)
+      );
+
+      /*
+      |--------------------------------------------------------------------------
+      | VERIFY LOCAL STORAGE
+      |--------------------------------------------------------------------------
+      */
+
+      const savedToken =
+        window.localStorage.getItem(
+          "approval_token"
+        );
+
+      const savedUser =
+        window.localStorage.getItem(
+          "approval_user"
+        );
+
+      console.log(
+        "========== AUTH STORAGE =========="
+      );
+
+      console.log(
+        "TOKEN SAVED:",
+        savedToken
+      );
+
+      console.log(
+        "USER SAVED:",
+        savedUser
+      );
+
+      if (!savedToken || !savedUser) {
+        console.error(
+          "LOCAL STORAGE GAGAL MENYIMPAN AUTH DATA"
+        );
+
+        toast.error(
+          "Data login gagal disimpan."
+        );
+
+        return;
+      }
+
+      console.log(
+        "========== LOGIN SUCCESS =========="
+      );
+
+      toast.success(
+        response.message || "Login berhasil."
+      );
+
+      /*
+      |--------------------------------------------------------------------------
+      | REDIRECT
+      |--------------------------------------------------------------------------
+      */
+
+      router.replace("/dashboard");
+    } catch (error: unknown) {
+      console.error(
+        "========== LOGIN ERROR =========="
+      );
+
+      console.error(error);
+
+      const axiosError = error as {
+        response?: {
+          status?: number;
+          data?: {
+            message?: string;
+          };
         };
+        message?: string;
       };
-      message?: string;
-    };
 
-    toast.error(
-      axiosError.response?.data?.message ||
+      const message =
+        axiosError.response?.data?.message ||
         axiosError.message ||
-        "Tidak dapat terhubung ke server."
-    );
-  }
-};
+        "Tidak dapat terhubung ke server.";
+
+      toast.error(message);
+    }
+  };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="w-full">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="w-full"
+    >
       <div className="space-y-5">
+
         {/* EMAIL */}
+
         <div>
           <label
             htmlFor="email"
@@ -155,6 +257,7 @@ export default function LoginForm() {
         </div>
 
         {/* PASSWORD */}
+
         <div>
           <div className="mb-2 flex items-center justify-between">
             <label
@@ -167,7 +270,9 @@ export default function LoginForm() {
             <button
               type="button"
               onClick={() =>
-                toast.info("Fitur reset password belum tersedia.")
+                toast.info(
+                  "Fitur reset password belum tersedia."
+                )
               }
               className="text-[12px] font-medium text-[#1e63a1] hover:underline"
             >
@@ -184,7 +289,11 @@ export default function LoginForm() {
 
             <input
               id="password"
-              type={showPassword ? "text" : "password"}
+              type={
+                showPassword
+                  ? "text"
+                  : "password"
+              }
               placeholder="Masukkan password"
               autoComplete="current-password"
               disabled={isSubmitting}
@@ -199,7 +308,9 @@ export default function LoginForm() {
             <button
               type="button"
               onClick={() =>
-                setShowPassword((current) => !current)
+                setShowPassword(
+                  (current) => !current
+                )
               }
               className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8aa0b2] hover:text-[#1e63a1]"
             >
@@ -219,11 +330,14 @@ export default function LoginForm() {
         </div>
 
         {/* REMEMBER */}
+
         <label className="flex cursor-pointer items-center gap-2 text-[13px] text-[#62778a]">
           <input
             type="checkbox"
             checked={rememberMe}
-            onChange={(e) => setRememberMe(e.target.checked)}
+            onChange={(e) =>
+              setRememberMe(e.target.checked)
+            }
             className="h-4 w-4 accent-[#1e63a1]"
           />
 
@@ -231,6 +345,7 @@ export default function LoginForm() {
         </label>
 
         {/* LOGIN */}
+
         <button
           type="submit"
           disabled={isSubmitting}
@@ -238,12 +353,17 @@ export default function LoginForm() {
         >
           {isSubmitting ? (
             <>
-              <Loader2 size={17} className="animate-spin" />
+              <Loader2
+                size={17}
+                className="animate-spin"
+              />
+
               Signing in...
             </>
           ) : (
             <>
               Sign in
+
               <ArrowRight
                 size={17}
                 className="transition-transform group-hover:translate-x-1"
@@ -254,69 +374,84 @@ export default function LoginForm() {
       </div>
 
       {/* DIVIDER */}
+
       <div className="my-6 flex items-center gap-4">
         <span className="h-px flex-1 bg-[#dce4eb]" />
-        <span className="text-[11px] text-[#93a4b2]">atau</span>
+
+        <span className="text-[11px] text-[#93a4b2]">
+          atau
+        </span>
+
         <span className="h-px flex-1 bg-[#dce4eb]" />
       </div>
 
       {/* SSO */}
+
       <button
         type="button"
         onClick={() =>
-          toast.info("Single Sign-On belum diaktifkan.")
+          toast.info(
+            "Single Sign-On belum diaktifkan."
+          )
         }
         className="group flex h-[54px] w-full items-center border border-[#cfdbe5] bg-white px-4 text-sm font-semibold text-[#1e63a1] transition hover:border-[#aebfcd] hover:bg-[#fbfdff]"
       >
         <ShieldCheck size={18} />
 
-        <span className="ml-3">Masuk dengan SSO</span>
+        <span className="ml-3">
+          Masuk dengan SSO
+        </span>
 
         <ArrowRight
           size={17}
           className="ml-auto transition-transform group-hover:translate-x-1"
         />
       </button>
-{/* AKHLAK VALUES */}
-<div className="mt-6 border-y border-[#e1e8ee] py-4">
-  <div className="mb-3 flex items-center justify-between">
-    <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8a9cab]">
-      Core Values
-    </span>
 
-    <span className="text-[10px] font-semibold tracking-[0.08em] text-[#1d62a1]">
-      AKHLAK
-    </span>
-  </div>
+      {/* AKHLAK VALUES */}
 
-  <div className="grid grid-cols-3 gap-x-3 gap-y-2">
-    {[
-      ["A", "Aku"],
-      ["K", "Kompeten"],
-      ["H", "Harmonis"],
-      ["L", "Loyal"],
-      ["A", "Adaptif"],
-      ["K", "Kolaboratif"],
-    ].map(([letter, value]) => (
-      <div
-        key={value}
-        className="group flex items-center gap-2"
-      >
-        <span className="flex h-6 w-6 items-center justify-center border border-[#cbd9e4] text-[10px] font-bold text-[#1d62a1] transition group-hover:border-[#1d62a1] group-hover:bg-[#1d62a1] group-hover:text-white">
-          {letter}
-        </span>
+      <div className="mt-6 border-y border-[#e1e8ee] py-4">
+        <div className="mb-3 flex items-center justify-between">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8a9cab]">
+            Core Values
+          </span>
 
-        <span className="text-[10px] text-[#6e8191]">
-          {value}
-        </span>
+          <span className="text-[10px] font-semibold tracking-[0.08em] text-[#1d62a1]">
+            AKHLAK
+          </span>
+        </div>
+
+        <div className="grid grid-cols-3 gap-x-3 gap-y-2">
+          {[
+            ["A", "Aku"],
+            ["K", "Kompeten"],
+            ["H", "Harmonis"],
+            ["L", "Loyal"],
+            ["A", "Adaptif"],
+            ["K", "Kolaboratif"],
+          ].map(([letter, value]) => (
+            <div
+              key={value}
+              className="group flex items-center gap-2"
+            >
+              <span className="flex h-6 w-6 items-center justify-center border border-[#cbd9e4] text-[10px] font-bold text-[#1d62a1] transition group-hover:border-[#1d62a1] group-hover:bg-[#1d62a1] group-hover:text-white">
+                {letter}
+              </span>
+
+              <span className="text-[10px] text-[#6e8191]">
+                {value}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
-    ))}
-  </div>
-</div>
+
       {/* SECURITY */}
+
       <div className="mt-6 flex justify-center">
         <p className="text-center text-[11px] leading-5 text-[#8b9daa]">
-          Akses terbatas untuk pengguna yang berwenang.
+          Akses terbatas untuk pengguna yang
+          berwenang.
         </p>
       </div>
     </form>

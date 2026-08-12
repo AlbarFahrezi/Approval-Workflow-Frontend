@@ -1,4 +1,7 @@
-export type UserRole = "admin" | "manager" | "employee";
+export type UserRole =
+  | "admin"
+  | "manager"
+  | "employee";
 
 export interface User {
   id: number;
@@ -18,10 +21,13 @@ export interface LoginPayload {
 export interface LoginResponse {
   success: boolean;
   message: string;
+
   data: {
     user: User;
+
     token?: string;
     access_token?: string;
+
     [key: string]: unknown;
   };
 }

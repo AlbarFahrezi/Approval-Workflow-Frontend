@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   title: "Approval Workflow",
-  description: "Approval Workflow Management System",
+  description: "Approval Workflow Application",
 };
 
 export default function RootLayout({
@@ -14,10 +13,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id">
-      <body>
-        {children}
-        <Toaster position="top-right" richColors />
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

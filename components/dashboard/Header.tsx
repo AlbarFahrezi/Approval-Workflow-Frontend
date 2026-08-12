@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Menu,
   Bell,
+  BellOff,
   Search,
   ChevronDown,
   X,
@@ -14,22 +15,32 @@ import {
   Settings,
   LogOut,
   Check,
+  RefreshCw,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+
+import {
+  getNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+  type BackendNotification,
+} from "@/services/notification";
 
 type UserData = {
   name: string;
   role: string;
   avatar?: string | null;
+  avatar_url?: string | null;
 };
 
 type NotificationItem = {
-  id: number;
+  id: string;
   type: "approved" | "rejected" | "pending";
   title: string;
   description: string;
   time: string;
   read: boolean;
+  approvalRequestId?: number;
 };
 
 type HeaderProps = {
@@ -40,35 +51,7 @@ type HeaderProps = {
   onLogout?: () => void;
 };
 
-const initialNotifications: NotificationItem[] = [
-  {
-    id: 1,
-    type: "rejected",
-    title: "Request Ditolak",
-    description:
-      'Pembelian Monitor 2K ditolak karena alasan tertentu.',
-    time: "2 jam lalu",
-    read: false,
-  },
-  {
-    id: 2,
-    type: "pending",
-    title: "Request Menunggu Approval",
-    description:
-      "Terdapat request baru yang membutuhkan approval.",
-    time: "3 jam lalu",
-    read: false,
-  },
-  {
-    id: 3,
-    type: "approved",
-    title: "Request Disetujui",
-    description:
-      "Request Pembelian Keyboard telah disetujui.",
-    time: "Kemarin",
-    read: true,
-  },
-];
+const NOTIFICATION_SETTING_KEY = "approval_notifications_enabled";
 
 export default function Header({
   user,
@@ -80,18 +63,45 @@ export default function Header({
   const router = useRouter();
 
   const [currentTime, setCurrentTime] = useState("");
-
-  const [showNotifications, setShowNotifications] =
-    useState(false);
-
+  const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
 
   const [notifications, setNotifications] = useState<
     NotificationItem[]
-  >(initialNotifications);
+  >([]);
+
+  const [notificationLoading, setNotificationLoading] =
+    useState(false);
+
+  /*
+  |--------------------------------------------------------------------------
+  | NOTIFICATION ON / OFF
+  |--------------------------------------------------------------------------
+  */
+
+  const [notificationsEnabled, setNotificationsEnabled] =
+    useState(true);
 
   const notificationRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
+
+  /*
+  |--------------------------------------------------------------------------
+  | LOAD NOTIFICATION SETTING
+  |--------------------------------------------------------------------------
+  */
+
+  useEffect(() => {
+    const savedSetting = localStorage.getItem(
+      NOTIFICATION_SETTING_KEY
+    );
+
+    if (savedSetting === "false") {
+      setNotificationsEnabled(false);
+    } else {
+      setNotificationsEnabled(true);
+    }
+  }, []);
 
   /*
   |--------------------------------------------------------------------------
@@ -138,17 +148,142 @@ export default function Header({
 
   /*
   |--------------------------------------------------------------------------
-  | UNREAD NOTIFICATION
+  | FORMAT BACKEND NOTIFICATION
   |--------------------------------------------------------------------------
   */
 
-  const unreadCount = notifications.filter(
-    (notification) => !notification.read
-  ).length;
+  const formatNotification = (
+    notification: BackendNotification
+  ): NotificationItem => {
+    const status = notification.data.status;
+
+    let type: NotificationItem["type"] = "pending";
+
+    if (status === "approved") {
+      type = "approved";
+    } else if (status === "rejected") {
+      type = "rejected";
+    }
+
+    return {
+      id: notification.id,
+
+      type,
+
+      title:
+        notification.data.title ??
+        "Notifikasi Approval",
+
+      description:
+        notification.data.message ??
+        "Ada aktivitas approval baru.",
+
+      time: new Date(
+        notification.created_at
+      ).toLocaleString("id-ID", {
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+
+      read: notification.read_at !== null,
+
+      approvalRequestId:
+        notification.data.approval_request_id,
+    };
+  };
 
   /*
   |--------------------------------------------------------------------------
-  | CLOSE DROPDOWN WHEN CLICK OUTSIDE
+  | LOAD NOTIFICATIONS
+  |--------------------------------------------------------------------------
+  */
+
+  const loadNotifications = async () => {
+    if (!notificationsEnabled || !user) {
+      return;
+    }
+
+    try {
+      setNotificationLoading(true);
+
+      const data = await getNotifications();
+
+      setNotifications(
+        data.map(formatNotification)
+      );
+    } catch (error) {
+      console.error(
+        "Gagal mengambil notifications:",
+        error
+      );
+    } finally {
+      setNotificationLoading(false);
+    }
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | INITIAL LOAD + AUTO REFRESH
+  |--------------------------------------------------------------------------
+  */
+
+  useEffect(() => {
+    if (!user || !notificationsEnabled) {
+      return;
+    }
+
+    void loadNotifications();
+
+    const interval = setInterval(() => {
+      void loadNotifications();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [user, notificationsEnabled]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | UNREAD COUNT
+  |--------------------------------------------------------------------------
+  */
+
+  const unreadCount = notificationsEnabled
+    ? notifications.filter(
+        (notification) => !notification.read
+      ).length
+    : 0;
+
+  /*
+  |--------------------------------------------------------------------------
+  | TOGGLE NOTIFICATIONS
+  |--------------------------------------------------------------------------
+  */
+
+  const toggleNotifications = () => {
+    const nextValue = !notificationsEnabled;
+
+    setNotificationsEnabled(nextValue);
+
+    localStorage.setItem(
+      NOTIFICATION_SETTING_KEY,
+      String(nextValue)
+    );
+
+    if (!nextValue) {
+      setNotifications([]);
+      setShowNotifications(false);
+    }
+
+    if (nextValue) {
+      void loadNotifications();
+    }
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | CLICK OUTSIDE
   |--------------------------------------------------------------------------
   */
 
@@ -218,41 +353,81 @@ export default function Header({
 
   /*
   |--------------------------------------------------------------------------
-  | MARK ALL NOTIFICATIONS AS READ
+  | MARK ALL AS READ
   |--------------------------------------------------------------------------
   */
 
-  const markAllAsRead = () => {
-    setNotifications((current) =>
-      current.map((notification) => ({
-        ...notification,
-        read: true,
-      }))
-    );
+  const markAllAsRead = async () => {
+    try {
+      await markAllNotificationsAsRead();
+
+      setNotifications((current) =>
+        current.map((notification) => ({
+          ...notification,
+          read: true,
+        }))
+      );
+    } catch (error) {
+      console.error(
+        "Gagal menandai semua notifikasi:",
+        error
+      );
+    }
   };
 
   /*
   |--------------------------------------------------------------------------
-  | MARK SINGLE NOTIFICATION
+  | MARK SINGLE AS READ
   |--------------------------------------------------------------------------
   */
 
-  const markAsRead = (id: number) => {
-    setNotifications((current) =>
-      current.map((notification) =>
-        notification.id === id
-          ? {
-              ...notification,
-              read: true,
-            }
-          : notification
-      )
-    );
+  const markAsRead = async (id: string) => {
+    try {
+      await markNotificationAsRead(id);
+
+      setNotifications((current) =>
+        current.map((notification) =>
+          notification.id === id
+            ? {
+                ...notification,
+                read: true,
+              }
+            : notification
+        )
+      );
+    } catch (error) {
+      console.error(
+        "Gagal menandai notifikasi:",
+        error
+      );
+    }
   };
 
   /*
   |--------------------------------------------------------------------------
-  | PROFILE NAVIGATION
+  | CLICK NOTIFICATION
+  |--------------------------------------------------------------------------
+  */
+
+  const handleNotificationClick = async (
+    notification: NotificationItem
+  ) => {
+    if (!notification.read) {
+      await markAsRead(notification.id);
+    }
+
+    setShowNotifications(false);
+
+    if (notification.approvalRequestId) {
+      router.push(
+        `/dashboard/requests/${notification.approvalRequestId}`
+      );
+    }
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | PROFILE
   |--------------------------------------------------------------------------
   */
 
@@ -289,22 +464,26 @@ export default function Header({
   |--------------------------------------------------------------------------
   */
 
-  const avatarUrl = user?.avatar;
+  const avatarUrl = user?.avatar_url ?? null;
 
   const initial =
     user?.name?.charAt(0).toUpperCase() ?? "U";
+
+  /*
+  |--------------------------------------------------------------------------
+  | UI
+  |--------------------------------------------------------------------------
+  */
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur-xl">
       <div className="flex h-[82px] items-center justify-between px-6 lg:px-8">
 
-        {/* ============================================================
-            LEFT
-        ============================================================ */}
+        {/* LEFT */}
 
         <div className="flex items-center gap-5">
 
-          {/* MOBILE MENU */}
+          {/* MOBILE */}
 
           <button
             onClick={onOpenSidebar}
@@ -330,15 +509,11 @@ export default function Header({
           </div>
         </div>
 
-        {/* ============================================================
-            RIGHT
-        ============================================================ */}
+        {/* RIGHT */}
 
         <div className="flex items-center gap-3">
 
-          {/* ==========================================================
-              SEARCH
-          ========================================================== */}
+          {/* SEARCH */}
 
           <div className="hidden items-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 lg:flex">
 
@@ -357,8 +532,6 @@ export default function Header({
               className="ml-3 w-64 bg-transparent text-sm outline-none placeholder:text-slate-400"
             />
 
-            {/* CLEAR SEARCH */}
-
             {search && (
               <button
                 onClick={() => onSearch("")}
@@ -370,17 +543,22 @@ export default function Header({
             )}
           </div>
 
-          {/* ==========================================================
-              NOTIFICATION
-          ========================================================== */}
+          {/* NOTIFICATION */}
 
           <div
             ref={notificationRef}
             className="relative"
           >
 
+            {/* BELL BUTTON */}
+
             <button
               onClick={() => {
+                if (!notificationsEnabled) {
+                  toggleNotifications();
+                  return;
+                }
+
                 setShowNotifications(
                   (current) => !current
                 );
@@ -388,145 +566,192 @@ export default function Header({
                 setShowProfile(false);
               }}
               className={`relative rounded-2xl border p-3 transition ${
-                showNotifications
-                  ? "border-blue-200 bg-blue-50 text-[#0B4EA2]"
-                  : "border-slate-200 bg-white hover:bg-slate-100"
+                notificationsEnabled
+                  ? showNotifications
+                    ? "border-blue-200 bg-blue-50 text-[#0B4EA2]"
+                    : "border-slate-200 bg-white hover:bg-slate-100"
+                  : "border-slate-300 bg-slate-100 text-slate-400"
               }`}
-              title="Notifikasi"
+              title={
+                notificationsEnabled
+                  ? "Notifikasi aktif"
+                  : "Notifikasi mati — klik untuk mengaktifkan"
+              }
             >
-              <Bell size={19} />
+
+              {notificationsEnabled ? (
+                <Bell size={19} />
+              ) : (
+                <BellOff size={19} />
+              )}
 
               {/* BADGE */}
 
-              {unreadCount > 0 && (
-                <>
-                  <span className="absolute right-2 top-2 h-2.5 w-2.5 animate-ping rounded-full bg-red-400 opacity-70" />
+              {notificationsEnabled &&
+                unreadCount > 0 && (
+                  <>
+                    <span className="absolute right-2 top-2 h-2.5 w-2.5 animate-ping rounded-full bg-red-400 opacity-70" />
 
-                  <span className="absolute right-2 top-2 flex h-2.5 min-w-2.5 items-center justify-center rounded-full bg-red-500 text-[8px] font-bold text-white" />
-                </>
-              )}
+                    <span className="absolute right-2 top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+                      {unreadCount > 99
+                        ? "99+"
+                        : unreadCount}
+                    </span>
+                  </>
+                )}
             </button>
 
-            {/* ========================================================
-                NOTIFICATION DROPDOWN
-            ======================================================== */}
+            {/* DROPDOWN */}
 
-            {showNotifications && (
-              <div className="absolute right-0 top-[58px] w-[380px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+            {showNotifications &&
+              notificationsEnabled && (
+                <div className="absolute right-0 top-[58px] w-[380px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
 
-                {/* HEADER */}
+                  {/* HEADER */}
 
-                <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+                  <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
 
-                  <div>
-                    <h3 className="text-base font-semibold text-slate-900">
-                      Notifikasi
-                    </h3>
+                    <div>
+                      <h3 className="text-base font-semibold text-slate-900">
+                        Notifikasi
+                      </h3>
 
-                    <p className="mt-1 text-xs text-slate-400">
-                      {unreadCount > 0
-                        ? `${unreadCount} notifikasi belum dibaca`
-                        : "Semua sudah dibaca"}
-                    </p>
-                  </div>
-
-                  {unreadCount > 0 && (
-                    <button
-                      onClick={markAllAsRead}
-                      className="flex items-center gap-1 text-xs font-semibold text-[#0B4EA2] hover:underline"
-                    >
-                      <Check size={14} />
-                      Tandai dibaca
-                    </button>
-                  )}
-                </div>
-
-                {/* NOTIFICATION LIST */}
-
-                <div className="max-h-[390px] overflow-y-auto">
-
-                  {notifications.length === 0 ? (
-                    <div className="px-5 py-10 text-center">
-                      <Bell
-                        size={30}
-                        className="mx-auto text-slate-300"
-                      />
-
-                      <p className="mt-3 text-sm font-medium text-slate-500">
-                        Tidak ada notifikasi
+                      <p className="mt-1 text-xs text-slate-400">
+                        {unreadCount > 0
+                          ? `${unreadCount} notifikasi belum dibaca`
+                          : "Semua sudah dibaca"}
                       </p>
                     </div>
-                  ) : (
-                    notifications.map(
-                      (notification) => (
+
+                    <div className="flex items-center gap-2">
+
+                      {unreadCount > 0 && (
                         <button
-                          key={notification.id}
                           onClick={() =>
-                            markAsRead(
-                              notification.id
-                            )
+                            void markAllAsRead()
                           }
-                          className={`flex w-full gap-3 border-b border-slate-100 px-5 py-4 text-left transition hover:bg-slate-50 ${
-                            !notification.read
-                              ? "bg-slate-50/80"
-                              : "bg-white"
-                          }`}
+                          className="flex items-center gap-1 text-xs font-semibold text-[#0B4EA2] hover:underline"
                         >
+                          <Check size={14} />
+                          Tandai dibaca
+                        </button>
+                      )}
 
-                          {getNotificationIcon(
-                            notification.type
-                          )}
+                      {/* SETTINGS TOGGLE */}
 
-                          <div className="min-w-0 flex-1">
+                      <button
+                        onClick={toggleNotifications}
+                        className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                        title="Matikan notifikasi"
+                      >
+                        <BellOff size={16} />
+                      </button>
 
-                            <div className="flex items-start justify-between gap-2">
+                    </div>
+                  </div>
 
-                              <p className="text-sm font-semibold text-slate-800">
-                                {notification.title}
+                  {/* LIST */}
+
+                  <div className="max-h-[390px] overflow-y-auto">
+
+                    {notificationLoading ? (
+                      <div className="px-5 py-10 text-center">
+
+                        <RefreshCw
+                          size={24}
+                          className="mx-auto animate-spin text-slate-400"
+                        />
+
+                        <p className="mt-3 text-sm text-slate-500">
+                          Memuat notifikasi...
+                        </p>
+
+                      </div>
+                    ) : notifications.length === 0 ? (
+                      <div className="px-5 py-10 text-center">
+
+                        <Bell
+                          size={30}
+                          className="mx-auto text-slate-300"
+                        />
+
+                        <p className="mt-3 text-sm font-medium text-slate-500">
+                          Tidak ada notifikasi
+                        </p>
+
+                      </div>
+                    ) : (
+                      notifications.map(
+                        (notification) => (
+                          <button
+                            key={notification.id}
+                            onClick={() =>
+                              void handleNotificationClick(
+                                notification
+                              )
+                            }
+                            className={`flex w-full gap-3 border-b border-slate-100 px-5 py-4 text-left transition hover:bg-slate-50 ${
+                              !notification.read
+                                ? "bg-blue-50/50"
+                                : "bg-white"
+                            }`}
+                          >
+
+                            {getNotificationIcon(
+                              notification.type
+                            )}
+
+                            <div className="min-w-0 flex-1">
+
+                              <div className="flex items-start justify-between gap-2">
+
+                                <p className="text-sm font-semibold text-slate-800">
+                                  {notification.title}
+                                </p>
+
+                                {!notification.read && (
+                                  <span className="mt-1 h-2 w-2 flex-shrink-0 rounded-full bg-blue-600" />
+                                )}
+
+                              </div>
+
+                              <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
+                                {notification.description}
                               </p>
 
-                              {!notification.read && (
-                                <span className="mt-1 h-2 w-2 flex-shrink-0 rounded-full bg-blue-600" />
-                              )}
+                              <p className="mt-2 text-[11px] text-slate-400">
+                                {notification.time}
+                              </p>
+
                             </div>
-
-                            <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
-                              {notification.description}
-                            </p>
-
-                            <p className="mt-2 text-[11px] text-slate-400">
-                              {notification.time}
-                            </p>
-
-                          </div>
-                        </button>
+                          </button>
+                        )
                       )
-                    )
-                  )}
+                    )}
+
+                  </div>
+
+                  {/* FOOTER */}
+
+                  <div className="border-t border-slate-200 p-3">
+
+                    <button
+                      onClick={() => {
+                        setShowNotifications(false);
+                        router.push("/notifications");
+                      }}
+                      className="w-full rounded-xl py-2.5 text-sm font-semibold text-[#0B4EA2] transition hover:bg-blue-50"
+                    >
+                      Lihat Semua Notifikasi
+                    </button>
+
+                  </div>
+
                 </div>
-
-                {/* FOOTER */}
-
-                <div className="border-t border-slate-200 p-3">
-
-                  <button
-                    onClick={() => {
-                      setShowNotifications(false);
-                      router.push("/notifications");
-                    }}
-                    className="w-full rounded-xl py-2.5 text-sm font-semibold text-[#0B4EA2] transition hover:bg-blue-50"
-                  >
-                    Lihat Semua Notifikasi
-                  </button>
-
-                </div>
-              </div>
-            )}
+              )}
           </div>
 
-          {/* ==========================================================
-              PROFILE
-          ========================================================== */}
+          {/* PROFILE */}
 
           <div
             ref={profileRef}
@@ -548,8 +773,6 @@ export default function Header({
               }`}
             >
 
-              {/* AVATAR */}
-
               {avatarUrl ? (
                 <img
                   src={avatarUrl}
@@ -561,8 +784,6 @@ export default function Header({
                   {initial}
                 </div>
               )}
-
-              {/* NAME */}
 
               <div className="hidden text-left xl:block">
 
@@ -584,16 +805,13 @@ export default function Header({
                     : ""
                 }`}
               />
+
             </button>
 
-            {/* ========================================================
-                PROFILE DROPDOWN
-            ======================================================== */}
+            {/* PROFILE DROPDOWN */}
 
             {showProfile && (
               <div className="absolute right-0 top-[58px] w-[250px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
-
-                {/* PROFILE INFO */}
 
                 <div className="border-b border-slate-100 px-4 py-4">
 
@@ -624,9 +842,8 @@ export default function Header({
                     </div>
 
                   </div>
-                </div>
 
-                {/* MENU */}
+                </div>
 
                 <div className="p-2">
 
@@ -656,8 +873,6 @@ export default function Header({
 
                 </div>
 
-                {/* LOGOUT */}
-
                 <div className="border-t border-slate-100 p-2">
 
                   <button
@@ -670,9 +885,12 @@ export default function Header({
                   </button>
 
                 </div>
+
               </div>
             )}
+
           </div>
+
         </div>
       </div>
     </header>
