@@ -89,18 +89,14 @@ export default function SettingsPage() {
   |--------------------------------------------------------------------------
   */
 
-  const handleSave = () => {
-    localStorage.setItem(
-      "settings_notifications",
-      String(notifications)
-    );
+ const handleSave = () => {
+  localStorage.setItem(
+    "settings_notifications",
+    String(notifications)
+  );
 
-    setSaved(true);
-
-    setTimeout(() => {
-      setSaved(false);
-    }, 2500);
-  };
+  router.replace("/dashboard");
+};
 
   /*
   |--------------------------------------------------------------------------

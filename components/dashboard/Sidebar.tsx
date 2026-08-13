@@ -5,7 +5,6 @@ import {
   FileText,
   CheckCircle2,
   Users,
-  Settings,
   LogOut,
   Plus,
 } from "lucide-react";
@@ -79,11 +78,7 @@ export default function Sidebar({
     });
   }
 
-  menu.push({
-    title: "Settings",
-    href: "/dashboard/settings",
-    icon: Settings,
-  });
+ 
 
   return (
     <>

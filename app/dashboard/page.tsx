@@ -120,23 +120,23 @@ export default function DashboardPage() {
     return null;
   }
 
-  const filteredRequests = recentRequests.filter(
-    (request) => {
-      const keyword = search.toLowerCase();
+  const keyword = search.trim().toLowerCase();
 
-      return (
-        request.title
-          .toLowerCase()
-          .includes(keyword) ||
-        request.description
-          .toLowerCase()
-          .includes(keyword) ||
-        request.status
-          .toLowerCase()
-          .includes(keyword)
-      );
-    }
-  );
+  const filteredRequests = keyword
+    ? approvalRequests.filter((request) => {
+        return (
+          request.title
+            ?.toLowerCase()
+            .includes(keyword) ||
+          request.description
+            ?.toLowerCase()
+            .includes(keyword) ||
+          request.status
+            ?.toLowerCase()
+            .includes(keyword)
+        );
+      })
+    : recentRequests;
 
   return (
     <div className="min-h-screen bg-[#f4f7fa]">
@@ -156,6 +156,7 @@ export default function DashboardPage() {
           onOpenSidebar={() =>
             setSidebarOpen(true)
           }
+          approvalRequests={approvalRequests}
         />
 
         <main className="space-y-7 p-6 lg:p-8">

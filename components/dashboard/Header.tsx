@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+import type { ApprovalRequest } from "@/types/approvalRequest";
+
 import {
   getNotifications,
   markNotificationAsRead,
@@ -48,6 +50,7 @@ type HeaderProps = {
   onOpenSidebar: () => void;
   search: string;
   onSearch: (value: string) => void;
+  approvalRequests?: ApprovalRequest[];
   onLogout?: () => void;
 };
 
@@ -58,6 +61,7 @@ export default function Header({
   onOpenSidebar,
   search,
   onSearch,
+  approvalRequests = [],
   onLogout,
 }: HeaderProps) {
   const router = useRouter();
@@ -65,6 +69,8 @@ export default function Header({
   const [currentTime, setCurrentTime] = useState("");
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [showSearchResults, setShowSearchResults] =
+    useState(false);
 
   const [notifications, setNotifications] = useState<
     NotificationItem[]
@@ -84,6 +90,7 @@ export default function Header({
 
   const notificationRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   /*
   |--------------------------------------------------------------------------
@@ -145,6 +152,60 @@ export default function Header({
 
     return "Selamat Malam";
   }, []);
+
+  /*
+  |--------------------------------------------------------------------------
+  | SEARCH RESULTS
+  |--------------------------------------------------------------------------
+  */
+
+  const searchResults = useMemo(() => {
+    const keyword = search.trim().toLowerCase();
+
+    if (!keyword) {
+      return [];
+    }
+
+    return approvalRequests
+      .filter((request) => {
+        const title =
+          request.title?.toLowerCase() ?? "";
+
+        const description =
+          request.description?.toLowerCase() ?? "";
+
+        const status =
+          request.status?.toLowerCase() ?? "";
+
+        const id = String(request.id).toLowerCase();
+
+        return (
+          title.includes(keyword) ||
+          description.includes(keyword) ||
+          status.includes(keyword) ||
+          id.includes(keyword)
+        );
+      })
+      .slice(0, 5);
+  }, [search, approvalRequests]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | SEARCH RESULT CLICK
+  |--------------------------------------------------------------------------
+  */
+
+  const handleSearchResultClick = (
+    request: ApprovalRequest
+  ) => {
+    setShowSearchResults(false);
+
+    onSearch("");
+
+    router.push(
+      `/dashboard/requests/${request.id}`
+    );
+  };
 
   /*
   |--------------------------------------------------------------------------
@@ -303,6 +364,13 @@ export default function Header({
         !profileRef.current.contains(target)
       ) {
         setShowProfile(false);
+      }
+
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(target)
+      ) {
+        setShowSearchResults(false);
       }
     };
 
@@ -515,32 +583,174 @@ export default function Header({
 
           {/* SEARCH */}
 
-          <div className="hidden items-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 lg:flex">
+          <div
+            ref={searchRef}
+            className="relative hidden lg:block"
+          >
+            <div
+              className={`flex items-center rounded-2xl border bg-slate-50 px-4 py-3 transition ${
+                showSearchResults && search.trim()
+                  ? "border-blue-300 ring-2 ring-blue-100"
+                  : "border-slate-200"
+              }`}
+            >
+              <Search
+                size={17}
+                className="text-slate-400"
+              />
 
-            <Search
-              size={17}
-              className="text-slate-400"
-            />
+              <input
+                type="text"
+                placeholder="Cari request..."
+                value={search}
+                onFocus={() => {
+                  if (search.trim()) {
+                    setShowSearchResults(true);
+                  }
+                }}
+                onChange={(e) => {
+                  const value = e.target.value;
 
-            <input
-              type="text"
-              placeholder="Cari request..."
-              value={search}
-              onChange={(e) =>
-                onSearch(e.target.value)
-              }
-              className="ml-3 w-64 bg-transparent text-sm outline-none placeholder:text-slate-400"
-            />
+                  onSearch(value);
 
-            {search && (
-              <button
-                onClick={() => onSearch("")}
-                className="ml-2 rounded-full p-1 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700"
-                title="Clear search"
-              >
-                <X size={15} />
-              </button>
-            )}
+                  setShowSearchResults(
+                    value.trim().length > 0
+                  );
+                }}
+                className="ml-3 w-64 bg-transparent text-sm outline-none placeholder:text-slate-400"
+              />
+
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSearch("");
+                    setShowSearchResults(false);
+                  }}
+                  className="ml-2 rounded-full p-1 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700"
+                  title="Clear search"
+                >
+                  <X size={15} />
+                </button>
+              )}
+            </div>
+
+            {/* SEARCH DROPDOWN */}
+
+            {showSearchResults &&
+              search.trim() && (
+                <div className="absolute right-0 top-[58px] z-50 w-[380px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+                  {/* HEADER */}
+
+                  <div className="border-b border-slate-100 px-5 py-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Hasil Pencarian
+                    </p>
+
+                    <p className="mt-1 text-sm text-slate-500">
+                      {searchResults.length > 0
+                        ? `${searchResults.length} request ditemukan`
+                        : "Tidak ada request yang cocok"}
+                    </p>
+                  </div>
+
+                  {/* RESULTS */}
+
+                  {searchResults.length > 0 ? (
+                    <div className="max-h-[360px] overflow-y-auto">
+                      {searchResults.map((request) => (
+                        <button
+                          key={request.id}
+                          type="button"
+                          onClick={() =>
+                            handleSearchResultClick(
+                              request
+                            )
+                          }
+                          className="flex w-full items-start gap-3 border-b border-slate-100 px-5 py-4 text-left transition hover:bg-blue-50"
+                        >
+                          <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#0B4EA2]">
+                            <Search size={17} />
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-3">
+                              <p className="truncate text-sm font-semibold text-slate-800">
+                                {request.title}
+                              </p>
+
+                              <span
+                                className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold ${
+                                  request.status ===
+                                  "approved"
+                                    ? "bg-green-100 text-green-700"
+                                    : request.status ===
+                                      "rejected"
+                                    ? "bg-red-100 text-red-700"
+                                    : request.status ===
+                                      "submitted"
+                                    ? "bg-yellow-100 text-yellow-700"
+                                    : "bg-slate-100 text-slate-600"
+                                }`}
+                              >
+                                {request.status}
+                              </span>
+                            </div>
+
+                            <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
+                              {request.description}
+                            </p>
+
+                            <p className="mt-2 text-[11px] text-slate-400">
+                              Request #{request.id}
+                            </p>
+                          </div>
+
+                          <ChevronDown
+                            size={16}
+                            className="-rotate-90 mt-2 shrink-0 text-slate-300"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="px-5 py-10 text-center">
+                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100">
+                        <Search
+                          size={22}
+                          className="text-slate-400"
+                        />
+                      </div>
+
+                      <p className="mt-3 text-sm font-semibold text-slate-700">
+                        Request tidak ditemukan
+                      </p>
+
+                      <p className="mt-1 text-xs text-slate-400">
+                        Coba gunakan kata kunci lain.
+                      </p>
+                    </div>
+                  )}
+
+                  {searchResults.length > 0 && (
+                    <div className="border-t border-slate-200 p-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowSearchResults(false);
+
+                          router.push(
+                            "/dashboard/requests"
+                          );
+                        }}
+                        className="w-full rounded-xl py-2.5 text-sm font-semibold text-[#0B4EA2] transition hover:bg-blue-50"
+                      >
+                        Lihat Semua Request →
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
           </div>
 
           {/* NOTIFICATION */}
