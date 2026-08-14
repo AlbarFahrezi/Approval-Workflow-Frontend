@@ -16,6 +16,7 @@ import {
   Send,
   Loader2,
   X,
+  AlertTriangle,
 } from "lucide-react";
 
 import { toast } from "sonner";
@@ -60,6 +61,13 @@ export default function RequestDetailPage() {
 
   const [rejectLoading, setRejectLoading] =
     useState(false);
+
+  const [confirmAction, setConfirmAction] = useState<
+  "submit" | "approve" | "delete" | null
+>(null);
+
+const [confirmLoading, setConfirmLoading] =
+  useState(false);  
 
   /*
   |--------------------------------------------------------------------------
@@ -129,35 +137,32 @@ export default function RequestDetailPage() {
   |--------------------------------------------------------------------------
   */
 
-  async function handleDelete() {
-    if (!request) return;
+ async function handleDelete() {
+  if (!request) return;
 
-    const confirmed = window.confirm(
-      "Yakin ingin menghapus request ini?"
+  try {
+    setConfirmLoading(true);
+
+    await deleteApprovalRequest(request.id);
+
+    toast.success(
+      "Request berhasil dihapus."
     );
 
-    if (!confirmed) {
-      return;
-    }
+    router.push(
+      "/dashboard/requests"
+    );
+  } catch (error) {
+    console.error(error);
 
-    try {
-      await deleteApprovalRequest(request.id);
-
-      toast.success(
-        "Request berhasil dihapus."
-      );
-
-      router.push(
-        "/dashboard/requests"
-      );
-    } catch (error) {
-      console.error(error);
-
-      toast.error(
-        "Gagal menghapus request."
-      );
-    }
+    toast.error(
+      "Gagal menghapus request."
+    );
+  } finally {
+    setConfirmLoading(false);
+    setConfirmAction(null);
   }
+}
 
   /*
   |--------------------------------------------------------------------------
@@ -166,47 +171,44 @@ export default function RequestDetailPage() {
   */
 
   async function handleSubmit() {
-    if (!request) return;
+  if (!request) return;
 
-    const confirmed = window.confirm(
-      "Submit request ini?"
+  try {
+    setConfirmLoading(true);
+
+    await submitApprovalRequest(
+      request.id
     );
 
-    if (!confirmed) {
-      return;
-    }
+    const id = request.id;
 
-    try {
-      await submitApprovalRequest(
-        request.id
-      );
+    const updatedRequest =
+      await getApprovalRequest(id);
 
-      const id = request.id;
+    const updatedTimeline =
+      await getApprovalTimeline(id);
 
-      const updatedRequest =
-        await getApprovalRequest(id);
+    const updatedHistory =
+      await getApprovalHistory(id);
 
-      const updatedTimeline =
-        await getApprovalTimeline(id);
+    setRequest(updatedRequest);
+    setTimeline(updatedTimeline);
+    setHistory(updatedHistory);
 
-      const updatedHistory =
-        await getApprovalHistory(id);
+    toast.success(
+      "Request berhasil disubmit."
+    );
+  } catch (error) {
+    console.error(error);
 
-      setRequest(updatedRequest);
-      setTimeline(updatedTimeline);
-      setHistory(updatedHistory);
-
-      toast.success(
-        "Request berhasil disubmit."
-      );
-    } catch (error) {
-      console.error(error);
-
-      toast.error(
-        "Gagal submit request."
-      );
-    }
+    toast.error(
+      "Gagal submit request."
+    );
+  } finally {
+    setConfirmLoading(false);
+    setConfirmAction(null);
   }
+}
 
   /*
   |--------------------------------------------------------------------------
@@ -214,49 +216,45 @@ export default function RequestDetailPage() {
   |--------------------------------------------------------------------------
   */
 
-  async function handleApprove() {
-    if (!request) return;
+ async function handleApprove() {
+  if (!request) return;
 
-    const confirmed = window.confirm(
-      "Approve request ini?"
+  try {
+    setConfirmLoading(true);
+
+    await approveApprovalRequest(
+      request.id
     );
 
-    if (!confirmed) {
-      return;
-    }
+    const id = request.id;
 
-    try {
-      await approveApprovalRequest(
-        request.id
-      );
+    const updatedRequest =
+      await getApprovalRequest(id);
 
-      const id = request.id;
+    const updatedTimeline =
+      await getApprovalTimeline(id);
 
-      const updatedRequest =
-        await getApprovalRequest(id);
+    const updatedHistory =
+      await getApprovalHistory(id);
 
-      const updatedTimeline =
-        await getApprovalTimeline(id);
+    setRequest(updatedRequest);
+    setTimeline(updatedTimeline);
+    setHistory(updatedHistory);
 
-      const updatedHistory =
-        await getApprovalHistory(id);
+    toast.success(
+      "Request berhasil diapprove."
+    );
+  } catch (error) {
+    console.error(error);
 
-      setRequest(updatedRequest);
-      setTimeline(updatedTimeline);
-      setHistory(updatedHistory);
-
-      toast.success(
-        "Request berhasil diapprove."
-      );
-    } catch (error) {
-      console.error(error);
-
-      toast.error(
-        "Gagal approve request."
-      );
-    }
+    toast.error(
+      "Gagal approve request."
+    );
+  } finally {
+    setConfirmLoading(false);
+    setConfirmAction(null);
   }
-
+}
   /*
   |--------------------------------------------------------------------------
   | Reject
@@ -472,7 +470,7 @@ export default function RequestDetailPage() {
 
                 <button
                   type="button"
-                  onClick={handleSubmit}
+                  onClick={() => setConfirmAction("submit")}
                   className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-5 py-3 font-semibold text-white transition hover:bg-green-700"
                 >
                   <Send size={18} />
@@ -484,7 +482,7 @@ export default function RequestDetailPage() {
 
                 <button
                   type="button"
-                  onClick={handleDelete}
+                   onClick={() => setConfirmAction("delete")}
                   className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 font-semibold text-white transition hover:bg-red-700"
                 >
                   <Trash2 size={18} />
@@ -507,7 +505,7 @@ export default function RequestDetailPage() {
 
                 <button
                   type="button"
-                  onClick={handleApprove}
+                  onClick={() => setConfirmAction("approve")}
                   className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-5 py-3 font-semibold text-white transition hover:bg-green-700"
                 >
                   <CheckCircle2 size={18} />
@@ -946,6 +944,145 @@ export default function RequestDetailPage() {
         )}
 
       </div>
+      
+      {/* ================================================================
+    CONFIRMATION MODAL
+================================================================= */}
+
+{confirmAction && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+
+    <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+
+      {/* Header */}
+
+      <div className="flex items-start gap-4">
+
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-yellow-100">
+          <AlertTriangle
+            size={24}
+            className="text-yellow-600"
+          />
+        </div>
+
+        <div>
+          <h2 className="text-xl font-bold text-slate-900">
+            Konfirmasi
+          </h2>
+
+          <p className="mt-1 text-sm leading-6 text-slate-500">
+            {confirmAction === "submit" &&
+              "Yakin ingin submit request ini?"}
+
+            {confirmAction === "approve" &&
+              "Yakin ingin approve request ini?"}
+
+            {confirmAction === "delete" &&
+              "Yakin ingin menghapus request ini? Data yang dihapus tidak dapat dikembalikan."}
+          </p>
+        </div>
+
+      </div>
+
+      {/* Request Info */}
+
+      <div className="mt-5 rounded-xl bg-slate-50 p-4">
+
+        <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+          Request
+        </p>
+
+        <p className="mt-1 font-semibold text-slate-800">
+          {request.title}
+        </p>
+
+        <p className="mt-1 text-sm text-slate-500">
+          Request ID #{request.id}
+        </p>
+
+      </div>
+
+      {/* Buttons */}
+
+      <div className="mt-6 flex justify-end gap-3">
+
+        <button
+          type="button"
+          disabled={confirmLoading}
+          onClick={() => {
+            setConfirmAction(null);
+            setConfirmLoading(false);
+          }}
+          className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-50"
+        >
+          Batal
+        </button>
+
+        <button
+          type="button"
+          disabled={confirmLoading}
+          onClick={() => {
+            if (confirmAction === "submit") {
+              handleSubmit();
+            }
+
+            if (confirmAction === "approve") {
+              handleApprove();
+            }
+
+            if (confirmAction === "delete") {
+              handleDelete();
+            }
+          }}
+          className={`inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50 ${
+            confirmAction === "delete"
+              ? "bg-red-600 hover:bg-red-700"
+              : "bg-[#0B4EA2] hover:bg-[#093D80]"
+          }`}
+        >
+
+          {confirmLoading ? (
+            <>
+              <Loader2
+                size={18}
+                className="animate-spin"
+              />
+
+              Memproses...
+            </>
+          ) : (
+            <>
+              {confirmAction === "submit" && (
+                <>
+                  <Send size={18} />
+                  Ya, Submit
+                </>
+              )}
+
+              {confirmAction === "approve" && (
+                <>
+                  <CheckCircle2 size={18} />
+                  Ya, Approve
+                </>
+              )}
+
+              {confirmAction === "delete" && (
+                <>
+                  <Trash2 size={18} />
+                  Ya, Hapus
+                </>
+              )}
+            </>
+          )}
+
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+)}
 
       {/* ================================================================
           REJECT MODAL
