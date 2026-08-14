@@ -326,6 +326,10 @@
     transition: none;
   }
 }
+/* =========================================================
+   DAHANA CORE VALUES / AKHLAK
+   ========================================================= */
+
 @keyframes dahana-akhlak-in {
   from {
     opacity: 0;
@@ -342,7 +346,7 @@
   from {
     opacity: 0;
     transform: translateY(18px);
-    letter-spacing: 0.28em;
+    letter-spacing: 0.24em;
   }
 
   to {
@@ -355,13 +359,13 @@
 @keyframes dahana-akhlak-letter-in {
   from {
     opacity: 0;
-    transform: translateY(14px) scale(0.94);
-    filter: blur(3px);
+    transform: translateY(14px);
+    filter: blur(2px);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
     filter: blur(0);
   }
 }
@@ -378,17 +382,29 @@
   }
 }
 
-/* AKHLAK wrapper */
+
+/* =========================================================
+   AKHLAK WRAPPER
+   ========================================================= */
 
 .dahana-akhlak {
-  animation: dahana-akhlak-in 0.8s ease-out 0.35s both;
+  animation:
+    dahana-akhlak-in
+    0.8s
+    ease-out
+    0.35s
+    both;
 }
 
-/* AKHLAK title */
+
+/* =========================================================
+   AKHLAK TITLE
+   ========================================================= */
 
 .dahana-akhlak-title {
   position: relative;
   display: inline-block;
+
   margin: 0;
 
   font-size: clamp(4rem, 6vw, 5.4rem);
@@ -396,12 +412,14 @@
   line-height: 0.9;
   letter-spacing: 0.13em;
 
-  /* INI YANG MENCEGAH JADI HITAM */
-  color: #d6c6a6;
+  /*
+   * Warna AKHLAK sekarang disamakan
+   * dengan tone Core Values.
+   */
+  color: #d7e3e8;
 
   text-shadow:
-    0 3px 20px rgba(0, 0, 0, 0.12),
-    0 0 22px rgba(115, 193, 228, 0.08);
+    0 3px 16px rgba(0, 0, 0, 0.16);
 
   animation:
     dahana-akhlak-title-in
@@ -409,55 +427,78 @@
     cubic-bezier(0.22, 1, 0.36, 1)
     0.45s
     both;
-
-  transition:
-    transform 300ms ease,
-    text-shadow 300ms ease;
 }
 
-.dahana-akhlak-title:hover {
-  transform: translateY(-4px);
 
-  text-shadow:
-    0 5px 22px rgba(0, 0, 0, 0.18),
-    0 0 30px rgba(92, 194, 235, 0.25);
-}
-
-/* Individual letters */
+/* =========================================================
+   INDIVIDUAL LETTER
+   ========================================================= */
 
 .dahana-akhlak-letter {
   display: inline-block;
 
-  color: #d6c6a6;
+  color: #d7e3e8;
 
   animation:
     dahana-akhlak-letter-in
-    0.75s
+    0.7s
     cubic-bezier(0.22, 1, 0.36, 1)
     both;
 
   transition:
-    color 280ms ease,
-    transform 280ms ease,
-    text-shadow 280ms ease;
+    color 220ms ease,
+    transform 220ms ease,
+    text-shadow 220ms ease;
 }
+
+
+/*
+ * Tidak ada warna berbeda per huruf.
+ *
+ * Semua huruf memiliki warna dasar yang sama.
+ * Accent biru hanya muncul ketika cursor diarahkan.
+ */
 
 .dahana-akhlak-letter:hover {
-  color: #83d4f5;
+  color: #82d4f5;
 
-  transform:
-    translateY(-7px)
-    scale(1.05);
+  transform: translateY(-5px);
 
   text-shadow:
-    0 0 16px rgba(93, 201, 240, 0.45),
-    0 0 32px rgba(93, 201, 240, 0.18);
+    0 0 14px rgba(130, 212, 245, 0.32);
 }
 
-/* Underline */
+
+/* =========================================================
+   AKHLAK TITLE HOVER
+   ========================================================= */
+
+.dahana-akhlak-title {
+  transition:
+    transform 220ms ease;
+}
+
+
+/*
+ * Kalau cursor mengenai area AKHLAK,
+ * seluruh title sedikit naik.
+ *
+ * Tetapi warna huruf tetap dikontrol
+ * oleh masing-masing letter.
+ */
+
+.dahana-akhlak-title:hover {
+  transform: translateY(-2px);
+}
+
+
+/* =========================================================
+   UNDERLINE
+   ========================================================= */
 
 .dahana-akhlak-underline {
   position: absolute;
+
   left: 0;
   bottom: -10px;
 
@@ -466,13 +507,13 @@
 
   background: linear-gradient(
     90deg,
-    #66bee9,
-    #9bdcf6,
-    transparent
+    #68c5eb,
+    #8bd8f4,
+    rgba(139, 216, 244, 0)
   );
 
   transition:
-    width 450ms cubic-bezier(0.22, 1, 0.36, 1);
+    width 380ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .dahana-akhlak-title:hover
@@ -480,7 +521,10 @@
   width: 150px;
 }
 
-/* VALUE NAMES */
+
+/* =========================================================
+   CORE VALUE ITEM
+   ========================================================= */
 
 .dahana-value-item {
   opacity: 0;
@@ -490,20 +534,33 @@
     0.65s
     cubic-bezier(0.22, 1, 0.36, 1)
     both;
+
+  cursor: default;
 }
 
+
+/* =========================================================
+   CORE VALUE TEXT
+   ========================================================= */
+
 .dahana-value-text {
+  margin: 0;
+
   font-size: 18px;
   font-weight: 500;
   line-height: 1.2;
 
-  /* BUKAN PUTIH */
-  color: #c7dce7;
+  /*
+   * Sama dengan AKHLAK.
+   */
+  color: #d7e3e8;
 
   transition:
-    color 280ms ease,
-    transform 280ms ease;
+    color 220ms ease,
+    transform 220ms ease,
+    text-shadow 220ms ease;
 }
+
 
 @media (min-width: 1280px) {
   .dahana-value-text {
@@ -511,13 +568,25 @@
   }
 }
 
+
+/* =========================================================
+   CORE VALUE HOVER
+   ========================================================= */
+
 .dahana-value-item:hover
 .dahana-value-text {
-  color: #80d2f4;
+  color: #82d4f5;
+
   transform: translateX(4px);
+
+  text-shadow:
+    0 0 12px rgba(130, 212, 245, 0.25);
 }
 
-/* Small line */
+
+/* =========================================================
+   VALUE UNDERLINE
+   ========================================================= */
 
 .dahana-value-line {
   display: block;
@@ -527,19 +596,54 @@
 
   margin-top: 7px;
 
-  background: #67b9df;
+  background: #69bfe4;
 
-  opacity: 0.55;
+  opacity: 0.5;
 
   transition:
-    width 300ms ease,
-    background 300ms ease,
-    opacity 300ms ease;
+    width 260ms ease,
+    background 220ms ease,
+    opacity 220ms ease;
 }
+
 
 .dahana-value-item:hover
 .dahana-value-line {
   width: 52px;
+
   background: #82d4f5;
+
   opacity: 1;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1279px) {
+
+  .dahana-akhlak-title {
+    font-size: clamp(3.5rem, 6vw, 4.8rem);
+  }
+
+  .dahana-value-text {
+    font-size: 18px;
+  }
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .dahana-akhlak,
+  .dahana-akhlak-title,
+  .dahana-akhlak-letter,
+  .dahana-value-item {
+    animation: none;
+    transition: none;
+  }
 }

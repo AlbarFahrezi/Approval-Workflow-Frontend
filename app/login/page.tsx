@@ -125,15 +125,7 @@ export default function LoginPage() {
 
               <div className="flex items-center gap-3">
 
-                <span className="text-[10px] uppercase tracking-[0.24em] text-white/50">
-                  Core Values
-                </span>
-
-                <span className="h-px w-9 bg-[#72bfdf]/40" />
-
-                <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7ccaf0]">
-                  DAHANA
-                </span>
+                
 
               </div>
 
@@ -187,131 +179,98 @@ export default function LoginPage() {
 
               </div>
 
-              <p className="mt-6 text-[9px] uppercase tracking-[0.2em] text-white/35">
-                Amanah · Kompeten · Harmonis · Loyal ·
-                Adaptif · Kolaboratif
-              </p>
+              
 
             </div>
           </div>
 
-          {/* =================================================
-              BOTTOM
-          ================================================== */}
-
+          {/* =================================================    BOTTOM================================================== */}
           <div className="absolute bottom-0 left-0 right-0 z-30 px-10 pb-9 xl:px-14">
-
             <div className="max-w-2xl">
-
-              <div className="mb-4 h-px w-12 bg-[#73c3e8]/70" />
-
-              
-
-              <h1 className="mt-2 text-[40px] font-semibold leading-[1.03] tracking-[-0.04em] text-[#e4f1f7] xl:text-[52px]">
-
+              {/* SECTION LABEL */}
+              <div className="mb-3 flex items-center gap-3">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8fd8f5]/80">
+                  Approval Workflow
+                </span>
+                <span className="h-px w-8 bg-[#73c3e8]/45" />
+              </div>
+              {/* MAIN TITLE */}
+              <h1 className="dahana-title text-[40px] font-semibold leading-[1.03] tracking-[-0.04em] text-[#e4f1f7] xl:text-[52px]">
                 Serving The Nation{" "}
-
                 <span className="text-[#6fc7ef]">
                   Better
                 </span>
-
               </h1>
-
-              <p className="mt-3 max-w-lg text-[13px] leading-6 text-white/60">
+              {/* DESCRIPTION */}
+              <p className="dahana-description mt-3 max-w-lg text-[13px] leading-6 text-white/60">
                 Platform internal untuk mengelola request,
                 persetujuan, dan riwayat proses secara
                 terintegrasi.
               </p>
-
-              <div className="mt-5 flex items-center gap-4 text-[9px] uppercase tracking-[0.15em] text-white/35">
-
+              {/* META */}
+              <div className="dahana-meta mt-5 flex items-center gap-4 text-[9px] uppercase tracking-[0.15em] text-white/35">
                 <span>PT DAHANA</span>
-
                 <span className="h-3 w-px bg-white/20" />
-
                 <span>
                   Authorized Personnel
                 </span>
-
               </div>
-
             </div>
-
+            {/* FOOTER */}
             <div className="mt-5 border-t border-white/10 pt-4 text-[9px] uppercase tracking-[0.12em] text-white/30">
               Internal Enterprise System
             </div>
-
           </div>
 
         </section>
 
-        {/* =====================================================
-            RIGHT
-        ====================================================== */}
-
+        {/* =====================================================    RIGHT====================================================== */}
         <section className="relative h-screen overflow-y-auto bg-[#f7f9fb]">
-
+          {/* Soft background accent */}
+          <div className="pointer-events-none absolute right-[-120px] top-[-100px] h-[300px] w-[300px] rounded-full bg-[#1d62a1]/[0.035] blur-3xl" />
+          <div className="pointer-events-none absolute bottom-[-120px] left-[-100px] h-[250px] w-[250px] rounded-full bg-[#65aee0]/[0.035] blur-3xl" />
           <div className="flex min-h-full items-center justify-center px-6 py-10 sm:px-10 lg:px-12">
-
-            <div className="w-full max-w-[430px]">
-
-              {/* MOBILE LOGO */}
-
+            <div className="relative z-10 w-full max-w-[430px]">
+              {/* =================================================          MOBILE LOGO      ================================================== */}
               <div className="mb-12 lg:hidden">
-
                 <Image
                   src="/dahana-logo.png"
                   alt="PT DAHANA"
                   width={150}
                   height={50}
-                  className="w-[135px]"
+                  className="mx-auto w-[135px]"
                 />
-
               </div>
-
-              {/* HEADING */}
-
-              <div className="mb-9">
-
-                
-
-                <h2 className="mt-3 text-[40px] font-semibold tracking-[-0.04em] text-[#14283a]">
+              {/* =================================================          LOGIN INTRO      ================================================== */}
+              <div className="mb-9 text-center">
+                <div className="mb-4 flex items-center justify-center gap-3">
+                 
+                </div>
+                <h2 className="text-[40px] font-semibold tracking-[-0.04em] text-[#14283a]">
                   Sign In
                 </h2>
-
-                <p className="mt-2 max-w-sm text-[13px] leading-6 text-[#728697]">
+                <p className="mx-auto mt-3 max-w-[350px] text-[13px] leading-6 text-[#728697]">
                   Masuk menggunakan akun perusahaan Anda
                   untuk melanjutkan ke sistem.
                 </p>
-
               </div>
-
-              {/* FORM */}
-
-              <LoginForm />
-
-              {/* FOOTER */}
-
+              {/* =================================================          FORM      ================================================== */}
+              <div className="w-full">
+                <LoginForm />
+              </div>
+              {/* =================================================          FOOTER      ================================================== */}
               <div className="mt-9 border-t border-[#dfe7ee] pt-4">
-
                 <div className="flex items-center justify-between text-[9px] uppercase tracking-[0.12em] text-[#98a7b3]">
-
                   <span>
                     PT DAHANA
                   </span>
-
                   <span>
                     Internal Use Only
                   </span>
-
                 </div>
-
               </div>
-
             </div>
-
           </div>
-
         </section>
 
       </div>
