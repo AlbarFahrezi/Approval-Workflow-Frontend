@@ -422,35 +422,10 @@ export default function LoginForm() {
       <div className="my-6 flex items-center gap-4">
         <span className="h-px flex-1 bg-[#dce4eb]" />
 
-        <span className="text-[11px] text-[#93a4b2]">
-          atau
-        </span>
+        
 
         <span className="h-px flex-1 bg-[#dce4eb]" />
       </div>
-
-      {/* SSO */}
-
-      <button
-        type="button"
-        onClick={() =>
-          toast.info(
-            "Single Sign-On belum diaktifkan."
-          )
-        }
-        className="group flex h-[54px] w-full items-center border border-[#cfdbe5] bg-white px-4 text-sm font-semibold text-[#1e63a1] transition hover:border-[#aebfcd] hover:bg-[#fbfdff]"
-      >
-        <ShieldCheck size={18} />
-
-        <span className="ml-3">
-          Masuk dengan SSO
-        </span>
-
-        <ArrowRight
-          size={17}
-          className="ml-auto transition-transform group-hover:translate-x-1"
-        />
-      </button>
 
       {/* AKHLAK */}
 
@@ -461,32 +436,8 @@ export default function LoginForm() {
           </span>
 
           <span className="text-[10px] font-semibold tracking-[0.08em] text-[#1d62a1]">
-            AKHLAK
+            DAHANA
           </span>
-        </div>
-
-        <div className="grid grid-cols-3 gap-x-3 gap-y-2">
-          {[
-            ["A", "Amanah"],
-            ["K", "Kompeten"],
-            ["H", "Harmonis"],
-            ["L", "Loyal"],
-            ["A", "Adaptif"],
-            ["K", "Kolaboratif"],
-          ].map(([letter, value]) => (
-            <div
-              key={value}
-              className="group flex items-center gap-2"
-            >
-              <span className="flex h-6 w-6 items-center justify-center border border-[#cbd9e4] text-[10px] font-bold text-[#1d62a1] transition group-hover:border-[#1d62a1] group-hover:bg-[#1d62a1] group-hover:text-white">
-                {letter}
-              </span>
-
-              <span className="text-[10px] text-[#6e8191]">
-                {value}
-              </span>
-            </div>
-          ))}
         </div>
       </div>
 
