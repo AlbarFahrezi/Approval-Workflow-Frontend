@@ -14,31 +14,123 @@ export function useAuth() {
     useState(true);
 
   useEffect(() => {
-    const token =
-      localStorage.getItem("approval_token");
+    const getStoredAuth = () => {
+      /*
+      |--------------------------------------------------------------------------
+      | LOCAL STORAGE
+      |--------------------------------------------------------------------------
+      |
+      | Digunakan ketika "Ingat saya" aktif.
+      |
+      */
 
-    const storedUser =
-      localStorage.getItem("approval_user");
+      const localToken =
+        localStorage.getItem(
+          "approval_token"
+        );
 
-    if (!token || !storedUser) {
+      const localUser =
+        localStorage.getItem(
+          "approval_user"
+        );
+
+      if (localToken && localUser) {
+        return {
+          token: localToken,
+          user: localUser,
+        };
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | SESSION STORAGE
+      |--------------------------------------------------------------------------
+      |
+      | Digunakan ketika "Ingat saya" tidak aktif.
+      |
+      */
+
+      const sessionToken =
+        sessionStorage.getItem(
+          "approval_token"
+        );
+
+      const sessionUser =
+        sessionStorage.getItem(
+          "approval_user"
+        );
+
+      if (sessionToken && sessionUser) {
+        return {
+          token: sessionToken,
+          user: sessionUser,
+        };
+      }
+
+      return null;
+    };
+
+    const authData =
+      getStoredAuth();
+
+    /*
+    |--------------------------------------------------------------------------
+    | TIDAK ADA AUTH
+    |--------------------------------------------------------------------------
+    */
+
+    if (!authData) {
+      setUser(null);
       setLoading(false);
+
       router.replace("/login");
+
       return;
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | PARSE USER
+    |--------------------------------------------------------------------------
+    */
+
     try {
       const parsedUser =
-        JSON.parse(storedUser) as User;
+        JSON.parse(
+          authData.user
+        ) as User;
 
       setUser(parsedUser);
       setLoading(false);
     } catch {
+      /*
+      |--------------------------------------------------------------------------
+      | AUTH DATA RUSAK
+      |--------------------------------------------------------------------------
+      */
+
       localStorage.removeItem(
         "approval_token"
       );
 
       localStorage.removeItem(
         "approval_user"
+      );
+
+      localStorage.removeItem(
+        "approval_remember_me"
+      );
+
+      sessionStorage.removeItem(
+        "approval_token"
+      );
+
+      sessionStorage.removeItem(
+        "approval_user"
+      );
+
+      sessionStorage.removeItem(
+        "approval_remember_me"
       );
 
       setUser(null);
@@ -53,4 +145,4 @@ export function useAuth() {
     loading,
     isAuthenticated: !!user,
   };
-}
+}   

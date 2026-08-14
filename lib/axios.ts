@@ -2,6 +2,7 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL: "http://127.0.0.1:8000/api",
+
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
@@ -11,17 +12,29 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     if (typeof window !== "undefined") {
-      const token = localStorage.getItem("approval_token");
+      /*
+      |--------------------------------------------------------------------------
+      | AMBIL TOKEN
+      |--------------------------------------------------------------------------
+      | Ingat Saya ON  -> localStorage
+      | Ingat Saya OFF -> sessionStorage
+      */
 
-      console.log("AXIOS TOKEN:", token);
+      const token =
+        localStorage.getItem("approval_token") ??
+        sessionStorage.getItem("approval_token");
 
       if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+        config.headers = config.headers ?? {};
+
+        config.headers.Authorization =
+          `Bearer ${token}`;
       }
     }
 
     return config;
   },
+
   (error) => {
     return Promise.reject(error);
   }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import type { User } from "@/types/auth";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -35,8 +36,11 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function LoginForm() {
   const router = useRouter();
 
-  const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] =
+    useState(false);
+
+  const [rememberMe, setRememberMe] =
+    useState(false);
 
   const {
     register,
@@ -46,24 +50,23 @@ export default function LoginForm() {
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = async (values: LoginFormValues) => {
+  const onSubmit = async (
+    values: LoginFormValues
+  ) => {
     try {
-      console.log("========== LOGIN START ==========");
-      console.log("EMAIL:", values.email);
-
       const response = await login(values);
 
-      console.log("========== LOGIN RESPONSE ==========");
-      console.log(response);
-
       if (!response.success) {
-        toast.error(response.message || "Login gagal.");
+        toast.error(
+          response.message || "Login gagal."
+        );
+
         return;
       }
 
       /*
       |--------------------------------------------------------------------------
-      | AMBIL TOKEN
+      | TOKEN
       |--------------------------------------------------------------------------
       */
 
@@ -87,11 +90,12 @@ export default function LoginForm() {
 
       /*
       |--------------------------------------------------------------------------
-      | AMBIL USER
+      | USER
       |--------------------------------------------------------------------------
       */
 
-      const user = response.data.user;
+      const user =
+        response.data.user as User | undefined;
 
       if (!user) {
         console.error(
@@ -108,58 +112,91 @@ export default function LoginForm() {
 
       /*
       |--------------------------------------------------------------------------
-      | SIMPAN AUTH DATA
+      | STORAGE
+      |--------------------------------------------------------------------------
+      |
+      | Ingat saya aktif:
+      | → localStorage
+      |
+      | Ingat saya tidak aktif:
+      | → sessionStorage
+      |
+      */
+
+      const storage = rememberMe
+        ? window.localStorage
+        : window.sessionStorage;
+
+      /*
+      |--------------------------------------------------------------------------
+      | BERSIHKAN AUTH LAMA
       |--------------------------------------------------------------------------
       */
 
-      window.localStorage.setItem(
+      window.localStorage.removeItem(
+        "approval_token"
+      );
+
+      window.localStorage.removeItem(
+        "approval_user"
+      );
+
+      window.localStorage.removeItem(
+        "approval_remember_me"
+      );
+
+      window.sessionStorage.removeItem(
+        "approval_token"
+      );
+
+      window.sessionStorage.removeItem(
+        "approval_user"
+      );
+
+      window.sessionStorage.removeItem(
+        "approval_remember_me"
+      );
+
+      /*
+      |--------------------------------------------------------------------------
+      | SIMPAN AUTH
+      |--------------------------------------------------------------------------
+      */
+
+      storage.setItem(
         "approval_token",
         token
       );
 
-      window.localStorage.setItem(
+      storage.setItem(
         "approval_user",
         JSON.stringify(user)
       );
 
-      window.localStorage.setItem(
+      storage.setItem(
         "approval_remember_me",
         String(rememberMe)
       );
 
       /*
       |--------------------------------------------------------------------------
-      | VERIFY LOCAL STORAGE
+      | VERIFY STORAGE
       |--------------------------------------------------------------------------
       */
 
       const savedToken =
-        window.localStorage.getItem(
+        storage.getItem(
           "approval_token"
         );
 
       const savedUser =
-        window.localStorage.getItem(
+        storage.getItem(
           "approval_user"
         );
 
-      console.log(
-        "========== AUTH STORAGE =========="
-      );
-
-      console.log(
-        "TOKEN SAVED:",
-        savedToken
-      );
-
-      console.log(
-        "USER SAVED:",
-        savedUser
-      );
-
       if (!savedToken || !savedUser) {
         console.error(
-          "LOCAL STORAGE GAGAL MENYIMPAN AUTH DATA"
+          "AUTH DATA GAGAL DISIMPAN"
         );
 
         toast.error(
@@ -169,12 +206,15 @@ export default function LoginForm() {
         return;
       }
 
-      console.log(
-        "========== LOGIN SUCCESS =========="
-      );
+      /*
+      |--------------------------------------------------------------------------
+      | SUCCESS
+      |--------------------------------------------------------------------------
+      */
 
       toast.success(
-        response.message || "Login berhasil."
+        response.message ||
+          "Login berhasil."
       );
 
       /*
@@ -202,7 +242,8 @@ export default function LoginForm() {
       };
 
       const message =
-        axiosError.response?.data?.message ||
+        axiosError.response?.data
+          ?.message ||
         axiosError.message ||
         "Tidak dapat terhubung ke server.";
 
@@ -329,15 +370,18 @@ export default function LoginForm() {
           )}
         </div>
 
-        {/* REMEMBER */}
+        {/* REMEMBER ME */}
 
         <label className="flex cursor-pointer items-center gap-2 text-[13px] text-[#62778a]">
           <input
             type="checkbox"
             checked={rememberMe}
-            onChange={(e) =>
-              setRememberMe(e.target.checked)
+            onChange={(event) =>
+              setRememberMe(
+                event.target.checked
+              )
             }
+            disabled={isSubmitting}
             className="h-4 w-4 accent-[#1e63a1]"
           />
 
@@ -408,7 +452,7 @@ export default function LoginForm() {
         />
       </button>
 
-      {/* AKHLAK VALUES */}
+      {/* AKHLAK */}
 
       <div className="mt-6 border-y border-[#e1e8ee] py-4">
         <div className="mb-3 flex items-center justify-between">
@@ -423,7 +467,7 @@ export default function LoginForm() {
 
         <div className="grid grid-cols-3 gap-x-3 gap-y-2">
           {[
-            ["A", "Aku"],
+            ["A", "Amanah"],
             ["K", "Kompeten"],
             ["H", "Harmonis"],
             ["L", "Loyal"],
