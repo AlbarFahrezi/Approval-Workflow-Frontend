@@ -123,88 +123,75 @@ export default function LoginForm() {
       |
       */
 
-      const storage = rememberMe
-        ? window.localStorage
-        : window.sessionStorage;
+     
 
       /*
-      |--------------------------------------------------------------------------
-      | BERSIHKAN AUTH LAMA
-      |--------------------------------------------------------------------------
-      */
+/*
+|--------------------------------------------------------------------------
+| BERSIHKAN AUTH LAMA
+|--------------------------------------------------------------------------
+*/
 
-      window.localStorage.removeItem(
-        "approval_token"
-      );
+window.localStorage.removeItem("approval_token");
+window.localStorage.removeItem("approval_user");
+window.localStorage.removeItem("approval_remember_me");
 
-      window.localStorage.removeItem(
-        "approval_user"
-      );
+window.sessionStorage.removeItem("approval_token");
+window.sessionStorage.removeItem("approval_user");
+window.sessionStorage.removeItem("approval_remember_me");
 
-      window.localStorage.removeItem(
-        "approval_remember_me"
-      );
+/*
+|--------------------------------------------------------------------------
+| SIMPAN AUTH
+|--------------------------------------------------------------------------
+*/
 
-      window.sessionStorage.removeItem(
-        "approval_token"
-      );
+window.localStorage.setItem(
+  "approval_token",
+  token
+);
 
-      window.sessionStorage.removeItem(
-        "approval_user"
-      );
+window.localStorage.setItem(
+  "approval_user",
+  JSON.stringify(user)
+);
 
-      window.sessionStorage.removeItem(
-        "approval_remember_me"
-      );
+window.localStorage.setItem(
+  "approval_remember_me",
+  String(rememberMe)
+);
 
-      /*
-      |--------------------------------------------------------------------------
-      | SIMPAN AUTH
-      |--------------------------------------------------------------------------
-      */
+/*
+|--------------------------------------------------------------------------
+| VERIFY STORAGE
+|--------------------------------------------------------------------------
+*/
 
-      storage.setItem(
-        "approval_token",
-        token
-      );
+const savedToken =
+  window.localStorage.getItem("approval_token");
 
-      storage.setItem(
-        "approval_user",
-        JSON.stringify(user)
-      );
+const savedUser =
+  window.localStorage.getItem("approval_user");
 
-      storage.setItem(
-        "approval_remember_me",
-        String(rememberMe)
-      );
+if (!savedToken || !savedUser) {
+  console.error("AUTH DATA GAGAL DISIMPAN");
 
-      /*
-      |--------------------------------------------------------------------------
-      | VERIFY STORAGE
-      |--------------------------------------------------------------------------
-      */
+  toast.error(
+    "Data login gagal disimpan."
+  );
 
-      const savedToken =
-        storage.getItem(
-          "approval_token"
-        );
+  return;
+}
 
-      const savedUser =
-        storage.getItem(
-          "approval_user"
-        );
+console.log(
+  "[LOGIN] Token tersimpan:",
+  savedToken ? "ADA" : "TIDAK ADA"
+);
 
-      if (!savedToken || !savedUser) {
-        console.error(
-          "AUTH DATA GAGAL DISIMPAN"
-        );
-
-        toast.error(
-          "Data login gagal disimpan."
-        );
-
-        return;
-      }
+console.log(
+  "[LOGIN] User tersimpan:",
+  savedUser ? "ADA" : "TIDAK ADA"
+);
 
       /*
       |--------------------------------------------------------------------------

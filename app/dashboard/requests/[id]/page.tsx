@@ -1,50 +1,52 @@
-  "use client";
+"use client";
 
-  import { useEffect, useState } from "react";
-  import { useParams, useRouter } from "next/navigation";
-  import {
-    ArrowLeft,
-    User,
-    Calendar,
-    FileText,
-    CheckCircle2,
-    Clock3,
-    XCircle,
-    Pencil,
-    Trash2,
-    Send,
-    Loader2,
-    X,
-  } from "lucide-react";
-  import { toast } from "sonner";
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 
-  import {
-    getApprovalRequest,
-    deleteApprovalRequest,
-    submitApprovalRequest,
-    approveApprovalRequest,
-    rejectApprovalRequest,
-    getApprovalTimeline,
-    getApprovalHistory,
-    
-  } from "@/services/approvalRequest";
-  import { getStoredUser } from "@/services/auth";
+import {
+  ArrowLeft,
+  User,
+  Calendar,
+  FileText,
+  CheckCircle2,
+  Clock3,
+  XCircle,
+  Pencil,
+  Trash2,
+  Send,
+  Loader2,
+  X,
+} from "lucide-react";
 
-  import type {
-    ApprovalRequest,
-  } from "@/types/approvalRequest";
+import { toast } from "sonner";
 
-  export default function RequestDetailPage() {
-    const router = useRouter();
+import {
+  getApprovalRequest,
+  deleteApprovalRequest,
+  submitApprovalRequest,
+  approveApprovalRequest,
+  rejectApprovalRequest,
+  getApprovalTimeline,
+  getApprovalHistory,
+} from "@/services/approvalRequest";
 
-    const params = useParams<{ id: string }>();
+import { getStoredUser } from "@/services/auth";
 
-    const [loading, setLoading] = useState(true);
+import type {
+  ApprovalRequest,
+} from "@/types/approvalRequest";
 
-    const [request, setRequest] =
-      useState<ApprovalRequest | null>(null);
+export default function RequestDetailPage() {
+  const router = useRouter();
 
-    const [timeline, setTimeline] =
+  const params = useParams<{ id: string }>();
+
+  const [loading, setLoading] = useState(true);
+
+  const [request, setRequest] =
+    useState<ApprovalRequest | null>(null);
+
+  const [timeline, setTimeline] =
     useState<any[]>([]);
 
   const [history, setHistory] =
@@ -59,10 +61,28 @@
   const [rejectLoading, setRejectLoading] =
     useState(false);
 
-  const currentUser = getStoredUser();
-  const currentUserRole = currentUser?.role;
+  /*
+  |--------------------------------------------------------------------------
+  | Current User
+  |--------------------------------------------------------------------------
+  */
 
-  console.log("CURRENT ROLE", currentUserRole);
+  const currentUser = getStoredUser();
+
+  const currentUserRole = String(
+    currentUser?.role ?? ""
+  )
+    .trim()
+    .toLowerCase();
+
+  console.log("CURRENT USER:", currentUser);
+  console.log("CURRENT ROLE:", currentUserRole);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Load Request Detail
+  |--------------------------------------------------------------------------
+  */
 
   useEffect(() => {
     async function loadDetail() {
@@ -71,7 +91,12 @@
 
         const id = Number(params.id);
 
+        if (!id) {
+          throw new Error("ID request tidak valid.");
+        }
+
         const data = await getApprovalRequest(id);
+
         setRequest(data);
 
         const timelineData =
@@ -82,7 +107,6 @@
 
         setTimeline(timelineData);
         setHistory(historyData);
-
       } catch (error) {
         console.error(error);
 
@@ -99,82 +123,154 @@
     }
   }, [params.id]);
 
+  /*
+  |--------------------------------------------------------------------------
+  | Delete
+  |--------------------------------------------------------------------------
+  */
+
   async function handleDelete() {
     if (!request) return;
 
-    if (!window.confirm("Yakin ingin menghapus request ini?")) {
+    const confirmed = window.confirm(
+      "Yakin ingin menghapus request ini?"
+    );
+
+    if (!confirmed) {
       return;
     }
 
     try {
       await deleteApprovalRequest(request.id);
 
-      toast.success("Request berhasil dihapus.");
+      toast.success(
+        "Request berhasil dihapus."
+      );
 
-      router.push("/dashboard/requests");
-
+      router.push(
+        "/dashboard/requests"
+      );
     } catch (error) {
       console.error(error);
 
-      toast.error("Gagal menghapus request.");
+      toast.error(
+        "Gagal menghapus request."
+      );
     }
   }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Submit
+  |--------------------------------------------------------------------------
+  */
 
   async function handleSubmit() {
     if (!request) return;
 
-    if (!window.confirm("Submit request ini?")) {
+    const confirmed = window.confirm(
+      "Submit request ini?"
+    );
+
+    if (!confirmed) {
       return;
     }
 
     try {
-      await submitApprovalRequest(request.id);
+      await submitApprovalRequest(
+        request.id
+      );
 
       const id = request.id;
 
-      setRequest(await getApprovalRequest(id));
-      setTimeline(await getApprovalTimeline(id));
-      setHistory(await getApprovalHistory(id));
+      const updatedRequest =
+        await getApprovalRequest(id);
 
-      toast.success("Request berhasil disubmit.");
+      const updatedTimeline =
+        await getApprovalTimeline(id);
 
+      const updatedHistory =
+        await getApprovalHistory(id);
+
+      setRequest(updatedRequest);
+      setTimeline(updatedTimeline);
+      setHistory(updatedHistory);
+
+      toast.success(
+        "Request berhasil disubmit."
+      );
     } catch (error) {
       console.error(error);
 
-      toast.error("Gagal submit request.");
+      toast.error(
+        "Gagal submit request."
+      );
     }
   }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Approve
+  |--------------------------------------------------------------------------
+  */
 
   async function handleApprove() {
     if (!request) return;
 
-    if (!window.confirm("Approve request ini?")) {
+    const confirmed = window.confirm(
+      "Approve request ini?"
+    );
+
+    if (!confirmed) {
       return;
     }
 
     try {
-      await approveApprovalRequest(request.id);
+      await approveApprovalRequest(
+        request.id
+      );
 
       const id = request.id;
 
-      setRequest(await getApprovalRequest(id));
-      setTimeline(await getApprovalTimeline(id));
-      setHistory(await getApprovalHistory(id));
+      const updatedRequest =
+        await getApprovalRequest(id);
 
-      toast.success("Request berhasil diapprove.");
+      const updatedTimeline =
+        await getApprovalTimeline(id);
 
+      const updatedHistory =
+        await getApprovalHistory(id);
+
+      setRequest(updatedRequest);
+      setTimeline(updatedTimeline);
+      setHistory(updatedHistory);
+
+      toast.success(
+        "Request berhasil diapprove."
+      );
     } catch (error) {
       console.error(error);
 
-      toast.error("Gagal approve request.");
+      toast.error(
+        "Gagal approve request."
+      );
     }
   }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Reject
+  |--------------------------------------------------------------------------
+  */
 
   async function handleReject() {
     if (!request) return;
 
     if (!rejectComment.trim()) {
-      toast.error("Alasan reject wajib diisi.");
+      toast.error(
+        "Alasan reject wajib diisi."
+      );
+
       return;
     }
 
@@ -188,22 +284,41 @@
 
       const id = request.id;
 
-      setRequest(await getApprovalRequest(id));
-      setTimeline(await getApprovalTimeline(id));
-      setHistory(await getApprovalHistory(id));
+      const updatedRequest =
+        await getApprovalRequest(id);
+
+      const updatedTimeline =
+        await getApprovalTimeline(id);
+
+      const updatedHistory =
+        await getApprovalHistory(id);
+
+      setRequest(updatedRequest);
+      setTimeline(updatedTimeline);
+      setHistory(updatedHistory);
 
       setRejectComment("");
       setShowRejectModal(false);
 
-      toast.success("Request berhasil direject.");
+      toast.success(
+        "Request berhasil direject."
+      );
     } catch (error) {
       console.error(error);
 
-      toast.error("Gagal reject request.");
+      toast.error(
+        "Gagal reject request."
+      );
     } finally {
       setRejectLoading(false);
     }
   }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Loading
+  |--------------------------------------------------------------------------
+  */
 
   if (loading) {
     return (
@@ -216,6 +331,12 @@
     );
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | Request Not Found
+  |--------------------------------------------------------------------------
+  */
+
   if (!request) {
     return (
       <div className="flex h-[70vh] flex-col items-center justify-center">
@@ -224,7 +345,10 @@
         </h2>
 
         <button
-          onClick={() => router.push("/dashboard")}
+          type="button"
+          onClick={() =>
+            router.push("/dashboard")
+          }
           className="mt-6 rounded-xl bg-[#0B4EA2] px-6 py-3 text-white"
         >
           Kembali Ke Dashboard
@@ -233,280 +357,408 @@
     );
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | Status
+  |--------------------------------------------------------------------------
+  */
+
+  const normalizedStatus = String(
+    request.status ?? ""
+  )
+    .trim()
+    .toLowerCase();
+
   const statusColor = {
-      draft:
-        "bg-slate-100 text-slate-700",
+    draft:
+      "bg-slate-100 text-slate-700",
 
-      submitted:
-        "bg-yellow-100 text-yellow-700",
+    submitted:
+      "bg-yellow-100 text-yellow-700",
 
-      approved:
-        "bg-green-100 text-green-700",
+    approved:
+      "bg-green-100 text-green-700",
 
-      rejected:
-        "bg-red-100 text-red-700",
-    };
+    rejected:
+      "bg-red-100 text-red-700",
+  };
 
-    const statusIcon = {
-      draft: <FileText size={18} />,
+  const statusIcon = {
+    draft:
+      <FileText size={18} />,
 
-      submitted: <Clock3 size={18} />,
+    submitted:
+      <Clock3 size={18} />,
 
-      approved: <CheckCircle2 size={18} />,
+    approved:
+      <CheckCircle2 size={18} />,
 
-      rejected: <XCircle size={18} />,
-    };
+    rejected:
+      <XCircle size={18} />,
+  };
 
-    return (
-      <div className="space-y-6">
+  /*
+  |--------------------------------------------------------------------------
+  | Render
+  |--------------------------------------------------------------------------
+  */
 
-        {/* Header */}
+  return (
+    <div className="space-y-6">
 
-  <div className="flex flex-wrap items-center justify-between gap-4">
+      {/* ================================================================
+          HEADER
+      ================================================================= */}
 
-    <div>
+      <div className="flex flex-wrap items-center justify-between gap-4">
 
-      <button
-        onClick={() => router.push("/dashboard/requests")}
-        className="mb-5 inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 hover:bg-slate-100"
-      >
-        <ArrowLeft size={18} />
-        Kembali 
-      </button>
+        <div>
 
-      <h1 className="text-3xl font-bold text-slate-900">
-        Detail Request
-      </h1>
+          <button
+            type="button"
+            onClick={() =>
+              router.push(
+                "/dashboard/requests"
+              )
+            }
+            className="mb-5 inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 transition hover:bg-slate-100"
+          >
+            <ArrowLeft size={18} />
 
-      <p className="mt-2 text-slate-500">
-        Informasi lengkap approval request.
-      </p>
+            Kembali
+          </button>
 
-    </div>
+          <h1 className="text-3xl font-bold text-slate-900">
+            Detail Request
+          </h1>
 
-    <div className="flex flex-wrap gap-3">
+          <p className="mt-2 text-slate-500">
+            Informasi lengkap approval request.
+          </p>
 
-    {/* Employee */}
-    {currentUserRole === "employee" &&
-    request.status === "draft" && (
-      <>
-        <button
-          onClick={() =>
-            router.push(`/dashboard/requests/${request.id}/edit`)
-          }
-          className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-5 py-3 font-semibold text-blue-700 hover:bg-blue-100"
-        >
-          <Pencil size={18} />
-          Edit
-        </button>
-
-        <button
-          onClick={handleSubmit}
-          className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-5 py-3 font-semibold text-white hover:bg-green-700"
-        >
-          <Send size={18} />
-          Submit
-        </button>
-
-        <button
-          onClick={handleDelete}
-          className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 font-semibold text-white hover:bg-red-700"
-        >
-          <Trash2 size={18} />
-          Delete
-        </button>
-      </>
-    )}
-
-    {/* Manager & Admin */}
-    {currentUserRole === "manager" &&
-    request.status === "submitted" && (
-      <>
-        <button
-          onClick={handleApprove}
-          className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-5 py-3 font-semibold text-white hover:bg-green-700"
-        >
-          <CheckCircle2 size={18} />
-          Approve
-        </button>
-
-        <button
-          onClick={() => setShowRejectModal(true)}
-          className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 font-semibold text-white hover:bg-red-700"
-        >
-          <XCircle size={18} />
-          Reject
-        </button>
-      </>
-    )}
-
-  </div>
-
-  </div>
-
-  {/* CARD */}
-
-  <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-
-    <div className="flex flex-wrap items-center justify-between gap-5">
-
-      <div>
-        <h2 className="text-3xl font-bold text-slate-900">
-          {request.title}
-        </h2>
-
-        <p className="mt-2 text-slate-500">
-          Request ID #{request.id}
-        </p>
-      </div>
-
-      <div
-        className={`flex items-center gap-2 rounded-full px-5 py-3 font-semibold ${
-          statusColor[
-            request.status as keyof typeof statusColor
-          ]
-        }`}
-      >
-        {
-          statusIcon[
-            request.status as keyof typeof statusIcon
-          ]
-        }
-
-        <span className="capitalize">
-          {request.status}
-        </span>
-      </div>
-
-    </div>
-
-    <div className="mt-8 grid gap-6 lg:grid-cols-2">
-
-      <div className="rounded-xl bg-slate-50 p-6">
-
-        <div className="mb-4 flex items-center gap-2 font-semibold">
-          <FileText size={18} />
-          Deskripsi
         </div>
 
-        <p className="leading-7 text-slate-600">
-          {request.description}
-        </p>
+        {/* ============================================================
+            ACTION BUTTONS
+        ============================================================= */}
 
-      </div>
+        <div className="flex flex-wrap gap-3">
 
-      <div className="space-y-4">
+          {/* ==========================================================
+              EMPLOYEE - DRAFT
+          =========================================================== */}
 
-        <div className="flex items-center gap-3 rounded-xl border p-4">
-          <User
-            size={20}
-            className="text-[#0B4EA2]"
-          />
+          {currentUserRole === "employee" &&
+            normalizedStatus === "draft" && (
+              <>
 
-          <div>
-            <p className="text-xs text-slate-500">
-              Dibuat Oleh
-            </p>
+                {/* Edit */}
 
-            <p className="font-semibold">
-              {request.user?.name ?? "-"}
-            </p>
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push(
+                      `/dashboard/requests/${request.id}/edit`
+                    )
+                  }
+                  className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-5 py-3 font-semibold text-blue-700 transition hover:bg-blue-100"
+                >
+                  <Pencil size={18} />
 
-            <p className="text-xs text-slate-500">
-              {request.user?.email ?? "-"}
-            </p>
-          </div>
-        </div>
+                  Edit
+                </button>
 
-        <div className="flex items-center gap-3 rounded-xl border p-4">
-          <Calendar
-            size={20}
-            className="text-[#0B4EA2]"
-          />
+                {/* Submit */}
 
-          <div>
-            <p className="text-xs text-slate-500">
-              Dibuat Pada
-            </p>
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-5 py-3 font-semibold text-white transition hover:bg-green-700"
+                >
+                  <Send size={18} />
 
-            <p className="font-semibold">
-              {new Date(
-                request.created_at
-              ).toLocaleString("id-ID")}
-            </p>
-          </div>
-        </div>
+                  Submit
+                </button>
 
-        <div className="flex items-center gap-3 rounded-xl border p-4">
-          <Clock3
-            size={20}
-            className="text-[#0B4EA2]"
-          />
+                {/* Delete */}
 
-          <div>
-            <p className="text-xs text-slate-500">
-              Submitted
-            </p>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 font-semibold text-white transition hover:bg-red-700"
+                >
+                  <Trash2 size={18} />
 
-            <p className="font-semibold">
-              {request.submitted_at
-                ? new Date(
-                    request.submitted_at
-                  ).toLocaleString("id-ID")
-                : "-"}
-            </p>
-          </div>
-        </div>
+                  Delete
+                </button>
 
-        <div className="flex items-center gap-3 rounded-xl border p-4">
-          <CheckCircle2
-            size={20}
-            className="text-[#0B4EA2]"
-          />
+              </>
+            )}
 
-          <div>
-            <p className="text-xs text-slate-500">
-              Approved
-            </p>
+          {/* ==========================================================
+              MANAGER - SUBMITTED
+          =========================================================== */}
 
-            <p className="font-semibold">
-              {request.approved_at
-                ? new Date(
-                    request.approved_at
-                  ).toLocaleString("id-ID")
-                : "-"}
-            </p>
-          </div>
-        </div>
+          {currentUserRole === "manager" &&
+            normalizedStatus === "submitted" && (
+              <>
 
-        <div className="flex items-center gap-3 rounded-xl border p-4">
-          <XCircle
-            size={20}
-            className="text-[#DC2626]"
-          />
+                {/* Approve */}
 
-          <div>
-            <p className="text-xs text-slate-500">
-              Rejected
-            </p>
+                <button
+                  type="button"
+                  onClick={handleApprove}
+                  className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-5 py-3 font-semibold text-white transition hover:bg-green-700"
+                >
+                  <CheckCircle2 size={18} />
 
-            <p className="font-semibold">
-              {request.rejected_at
-                ? new Date(
-                    request.rejected_at
-                  ).toLocaleString("id-ID")
-                : "-"}
-            </p>
-          </div>
+                  Approve
+                </button>
+
+                {/* Reject */}
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowRejectModal(true)
+                  }
+                  className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 font-semibold text-white transition hover:bg-red-700"
+                >
+                  <XCircle size={18} />
+
+                  Reject
+                </button>
+
+              </>
+            )}
+
         </div>
 
       </div>
 
-    </div>
+      {/* ================================================================
+          REQUEST CARD
+      ================================================================= */}
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+
+        {/* Request Header */}
+
+        <div className="flex flex-wrap items-center justify-between gap-5">
+
+          <div>
+
+            <h2 className="text-3xl font-bold text-slate-900">
+              {request.title}
+            </h2>
+
+            <p className="mt-2 text-slate-500">
+              Request ID #{request.id}
+            </p>
+
+          </div>
+
+          {/* Status */}
+
+          <div
+            className={`flex items-center gap-2 rounded-full px-5 py-3 font-semibold ${
+              statusColor[
+                normalizedStatus as keyof typeof statusColor
+              ] ??
+              "bg-slate-100 text-slate-700"
+            }`}
+          >
+
+            {
+              statusIcon[
+                normalizedStatus as keyof typeof statusIcon
+              ] ?? <FileText size={18} />
+            }
+
+            <span className="capitalize">
+              {normalizedStatus}
+            </span>
+
+          </div>
+
+        </div>
+
+        {/* ============================================================
+            INFORMATION
+        ============================================================= */}
+
+        <div className="mt-8 grid gap-6 lg:grid-cols-2">
+
+          {/* Description */}
+
+          <div className="rounded-xl bg-slate-50 p-6">
+
+            <div className="mb-4 flex items-center gap-2 font-semibold">
+              <FileText size={18} />
+
+              Deskripsi
+            </div>
+
+            <p className="leading-7 text-slate-600">
+              {request.description}
+            </p>
+
+          </div>
+
+          {/* Right Information */}
+
+          <div className="space-y-4">
+
+            {/* Created By */}
+
+            <div className="flex items-center gap-3 rounded-xl border border-slate-200 p-4">
+
+              <User
+                size={20}
+                className="text-[#0B4EA2]"
+              />
+
+              <div>
+
+                <p className="text-xs text-slate-500">
+                  Dibuat Oleh
+                </p>
+
+                <p className="font-semibold">
+                  {request.user?.name ?? "-"}
+                </p>
+
+                <p className="text-xs text-slate-500">
+                  {request.user?.email ?? "-"}
+                </p>
+
+              </div>
+
+            </div>
+
+            {/* Created At */}
+
+            <div className="flex items-center gap-3 rounded-xl border border-slate-200 p-4">
+
+              <Calendar
+                size={20}
+                className="text-[#0B4EA2]"
+              />
+
+              <div>
+
+                <p className="text-xs text-slate-500">
+                  Dibuat Pada
+                </p>
+
+                <p className="font-semibold">
+                  {new Date(
+                    request.created_at
+                  ).toLocaleString(
+                    "id-ID"
+                  )}
+                </p>
+
+              </div>
+
+            </div>
+
+            {/* Submitted */}
+
+            <div className="flex items-center gap-3 rounded-xl border border-slate-200 p-4">
+
+              <Clock3
+                size={20}
+                className="text-[#0B4EA2]"
+              />
+
+              <div>
+
+                <p className="text-xs text-slate-500">
+                  Submitted
+                </p>
+
+                <p className="font-semibold">
+                  {request.submitted_at
+                    ? new Date(
+                        request.submitted_at
+                      ).toLocaleString(
+                        "id-ID"
+                      )
+                    : "-"}
+                </p>
+
+              </div>
+
+            </div>
+
+            {/* Approved */}
+
+            <div className="flex items-center gap-3 rounded-xl border border-slate-200 p-4">
+
+              <CheckCircle2
+                size={20}
+                className="text-[#0B4EA2]"
+              />
+
+              <div>
+
+                <p className="text-xs text-slate-500">
+                  Approved
+                </p>
+
+                <p className="font-semibold">
+                  {request.approved_at
+                    ? new Date(
+                        request.approved_at
+                      ).toLocaleString(
+                        "id-ID"
+                      )
+                    : "-"}
+                </p>
+
+              </div>
+
+            </div>
+
+            {/* Rejected */}
+
+            <div className="flex items-center gap-3 rounded-xl border border-slate-200 p-4">
+
+              <XCircle
+                size={20}
+                className="text-red-600"
+              />
+
+              <div>
+
+                <p className="text-xs text-slate-500">
+                  Rejected
+                </p>
+
+                <p className="font-semibold">
+                  {request.rejected_at
+                    ? new Date(
+                        request.rejected_at
+                      ).toLocaleString(
+                        "id-ID"
+                      )
+                    : "-"}
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
 
       </div>
 
-      {/* Timeline */}
+      {/* ================================================================
+          APPROVAL TIMELINE
+      ================================================================= */}
 
       <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
 
@@ -524,52 +776,66 @@
 
           <div className="space-y-5">
 
-            {timeline.map((item: any, index: number) => (
+            {timeline.map(
+              (
+                item: any,
+                index: number
+              ) => (
 
-              <div
-                key={index}
-                className="flex gap-4"
-              >
+                <div
+                  key={index}
+                  className="flex gap-4"
+                >
 
-                <div className="flex flex-col items-center">
+                  {/* Timeline Dot */}
 
-                  <div className="h-4 w-4 rounded-full bg-[#0B4EA2]" />
+                  <div className="flex flex-col items-center">
 
-                  {index !== timeline.length - 1 && (
-                    <div className="mt-1 h-full w-[2px] bg-slate-300" />
-                  )}
+                    <div className="h-4 w-4 rounded-full bg-[#0B4EA2]" />
 
-                </div>
-
-                <div className="flex-1 rounded-xl border border-slate-200 p-5">
-
-                  <div className="flex items-center justify-between">
-
-                    <h3 className="font-semibold capitalize">
-                      {item.status}
-                    </h3>
-
-                    <span className="text-xs text-slate-500">
-                      {item.created_at
-                        ? new Date(item.created_at).toLocaleString("id-ID")
-                        : "-"}
-                    </span>
+                    {index !==
+                      timeline.length - 1 && (
+                      <div className="mt-1 h-full w-[2px] bg-slate-300" />
+                    )}
 
                   </div>
 
-                  <p className="mt-2 text-sm text-slate-500">
-                    {item.comment || "-"}
-                  </p>
+                  {/* Timeline Content */}
 
-                  <p className="mt-2 text-sm font-medium text-[#0B4EA2]">
-                    {item.user?.name || "-"}
-                  </p>
+                  <div className="flex-1 rounded-xl border border-slate-200 p-5">
+
+                    <div className="flex items-center justify-between gap-4">
+
+                      <h3 className="font-semibold capitalize">
+                        {item.status}
+                      </h3>
+
+                      <span className="text-xs text-slate-500">
+                        {item.created_at
+                          ? new Date(
+                              item.created_at
+                            ).toLocaleString(
+                              "id-ID"
+                            )
+                          : "-"}
+                      </span>
+
+                    </div>
+
+                    <p className="mt-2 text-sm text-slate-500">
+                      {item.comment || "-"}
+                    </p>
+
+                    <p className="mt-2 text-sm font-medium text-[#0B4EA2]">
+                      {item.user?.name || "-"}
+                    </p>
+
+                  </div>
 
                 </div>
 
-              </div>
-
-            ))}
+              )
+            )}
 
           </div>
 
@@ -577,7 +843,9 @@
 
       </div>
 
-      {/* History */}
+      {/* ================================================================
+          APPROVAL HISTORY
+      ================================================================= */}
 
       <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
 
@@ -627,36 +895,47 @@
 
               <tbody>
 
-                {history.map((item: any) => (
+                {history.map(
+                  (item: any) => (
 
-                  <tr
-                    key={item.id}
-                    className="border-b"
-                  >
+                    <tr
+                      key={item.id}
+                      className="border-b"
+                    >
 
-                    <td className="p-3 capitalize">
-                      {item.from_status || "-"}
-                    </td>
+                      <td className="p-3 capitalize">
+                        {item.from_status ||
+                          "-"}
+                      </td>
 
-                    <td className="p-3 capitalize">
-                      {item.to_status}
-                    </td>
+                      <td className="p-3 capitalize">
+                        {item.to_status}
+                      </td>
 
-                    <td className="p-3">
-                      {item.user?.name || "-"}
-                    </td>
+                      <td className="p-3">
+                        {item.user?.name ||
+                          "-"}
+                      </td>
 
-                    <td className="p-3">
-                      {item.comment || "-"}
-                    </td>
+                      <td className="p-3">
+                        {item.comment ||
+                          "-"}
+                      </td>
 
-                    <td className="p-3">
-                      {new Date(item.created_at).toLocaleString("id-ID")}
-                    </td>
+                      <td className="p-3">
+                        {item.created_at
+                          ? new Date(
+                              item.created_at
+                            ).toLocaleString(
+                              "id-ID"
+                            )
+                          : "-"}
+                      </td>
 
-                  </tr>
+                    </tr>
 
-                ))}
+                  )
+                )}
 
               </tbody>
 
@@ -668,23 +947,35 @@
 
       </div>
 
+      {/* ================================================================
+          REJECT MODAL
+      ================================================================= */}
+
       {showRejectModal && (
+
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+
           <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
 
-            {/* Header */}
+            {/* Modal Header */}
+
             <div className="flex items-start justify-between">
 
               <div>
+
                 <div className="flex items-center gap-3">
+
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
+
                     <XCircle
                       size={22}
                       className="text-red-600"
                     />
+
                   </div>
 
                   <div>
+
                     <h2 className="text-xl font-bold text-slate-900">
                       Tolak Request
                     </h2>
@@ -692,8 +983,11 @@
                     <p className="mt-1 text-sm text-slate-500">
                       Berikan alasan mengapa request ini ditolak.
                     </p>
+
                   </div>
+
                 </div>
+
               </div>
 
               <button
@@ -710,6 +1004,7 @@
             </div>
 
             {/* Request Info */}
+
             <div className="mt-6 rounded-xl bg-slate-50 p-4">
 
               <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
@@ -723,6 +1018,7 @@
             </div>
 
             {/* Comment */}
+
             <div className="mt-5">
 
               <label
@@ -736,7 +1032,9 @@
                 id="reject-comment"
                 value={rejectComment}
                 onChange={(e) =>
-                  setRejectComment(e.target.value)
+                  setRejectComment(
+                    e.target.value
+                  )
                 }
                 rows={5}
                 maxLength={500}
@@ -759,7 +1057,8 @@
 
             </div>
 
-            {/* Actions */}
+            {/* Modal Actions */}
+
             <div className="mt-6 flex justify-end gap-3">
 
               <button
@@ -790,11 +1089,13 @@
                       size={18}
                       className="animate-spin"
                     />
+
                     Menolak...
                   </>
                 ) : (
                   <>
                     <XCircle size={18} />
+
                     Tolak Request
                   </>
                 )}
@@ -804,8 +1105,11 @@
             </div>
 
           </div>
+
         </div>
+
       )}
+
     </div>
-    );
-  }
+  );
+}

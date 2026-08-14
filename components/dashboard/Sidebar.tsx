@@ -7,8 +7,13 @@ import {
   Users,
   LogOut,
   Plus,
+  ChevronRight,
+  X,
 } from "lucide-react";
+
 import { useRouter, usePathname } from "next/navigation";
+import Image from "next/image";
+
 import { logout } from "@/services/auth";
 import type { LucideIcon } from "lucide-react";
 
@@ -78,102 +83,209 @@ export default function Sidebar({
     });
   }
 
- 
+  const navigate = (href: string) => {
+    router.push(href);
+    onClose();
+  };
 
   return (
     <>
+      {/* MOBILE OVERLAY */}
       {open && (
         <div
           onClick={onClose}
-          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+          className="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-sm lg:hidden"
         />
       )}
 
       <aside
-        className={`fixed left-0 top-0 z-50 flex h-screen w-72 flex-col border-r border-slate-200 bg-white transition-transform duration-300 lg:translate-x-0 ${
-          open ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`
+          fixed left-0 top-0 z-50
+          flex h-screen w-[270px] flex-col
+          border-r border-slate-200/80
+          bg-white
+          shadow-[8px_0_30px_rgba(15,23,42,0.04)]
+          transition-transform duration-300
+          lg:translate-x-0
+          ${open ? "translate-x-0" : "-translate-x-full"}
+        `}
       >
-        <div className="border-b border-slate-200 p-6">
-          <h2 className="text-lg font-bold text-[#0B4EA2]">
-            Approval Workflow
-          </h2>
+        {/* =========================================================
+            LOGO
+        ========================================================= */}
 
-          <p className="mt-1 text-xs text-slate-400">
-            PT DAHANA
-          </p>
+        <div className="flex h-[92px] items-center justify-between border-b border-slate-100 px-7">
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="group flex items-center"
+          >
+            <Image
+              src="/dahana-logo.png"
+              alt="Dahana"
+              width={145}
+              height={48}
+              priority
+              className="h-auto w-[145px] object-contain transition duration-300 group-hover:scale-[1.02]"
+            />
+          </button>
+
+          {/* MOBILE CLOSE */}
+          <button
+            onClick={onClose}
+            className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 lg:hidden"
+          >
+            <X size={19} />
+          </button>
         </div>
 
-        <nav className="flex-1 space-y-2 p-4">
-          {menu.map((item) => {
-            const Icon = item.icon;
+        {/* =========================================================
+            SYSTEM LABEL
+        ========================================================= */}
 
-            const active =
-              pathname === item.href;
+        
 
-            return (
-              <button
-                key={item.href}
-                onClick={() => {
-                  router.push(item.href);
-                  onClose();
-                }}
-                className={`flex w-full items-center justify-between rounded-xl px-4 py-3 transition ${
-                  active
-                    ? "bg-[#0B4EA2] text-white"
-                    : "text-slate-600 hover:bg-slate-100"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Icon size={19} />
-                  {item.title}
-                </div>
+        {/* =========================================================
+            MENU
+        ========================================================= */}
 
-                {item.badge !== undefined &&
-                  item.badge > 0 && (
+        <nav className="flex-1 px-4 py-3">
+          <div className="space-y-1.5">
+            {menu.map((item) => {
+              const Icon = item.icon;
+
+              const active =
+                pathname === item.href ||
+                (item.href !== "/dashboard" &&
+                  pathname.startsWith(item.href));
+
+              return (
+                <button
+                  key={item.href}
+                  onClick={() => navigate(item.href)}
+                  className={`
+                    group relative flex w-full items-center
+                    justify-between rounded-xl
+                    px-4 py-3
+                    text-left
+                    transition-all duration-200
+                    ${
+                      active
+                        ? "bg-[#0B4EA2] text-white shadow-[0_8px_20px_rgba(11,78,162,0.18)]"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-[#0B4EA2]"
+                    }
+                  `}
+                >
+                  <div className="flex items-center gap-3">
                     <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-bold ${
-                        active
-                          ? "bg-white text-[#0B4EA2]"
-                          : "bg-red-500 text-white"
-                      }`}
+                      className={`
+                        flex h-8 w-8 items-center justify-center rounded-lg
+                        transition
+                        ${
+                          active
+                            ? "bg-white/15"
+                            : "bg-slate-50 group-hover:bg-blue-50"
+                        }
+                      `}
                     >
-                      {item.badge}
+                      <Icon size={17} />
                     </span>
-                  )}
-              </button>
-            );
-          })}
+
+                    <span
+                      className={`
+                        text-sm font-medium
+                        ${
+                          active
+                            ? "text-white"
+                            : "text-slate-600 group-hover:text-[#0B4EA2]"
+                        }
+                      `}
+                    >
+                      {item.title}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {item.badge !== undefined &&
+                      item.badge > 0 && (
+                        <span
+                          className={`
+                            flex min-w-6 items-center justify-center
+                            rounded-full px-1.5 py-0.5
+                            text-[10px] font-bold
+                            ${
+                              active
+                                ? "bg-white text-[#0B4EA2]"
+                                : "bg-red-500 text-white"
+                            }
+                          `}
+                        >
+                          {item.badge}
+                        </span>
+                      )}
+
+                    {active && (
+                      <ChevronRight
+                        size={15}
+                        className="text-white/70"
+                      />
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </nav>
 
-        <div className="border-t border-slate-200 p-4">
-          <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#0B4EA2] font-semibold text-white">
-              {user?.name?.charAt(0).toUpperCase() ??
-                "U"}
-            </div>
+        {/* =========================================================
+            BOTTOM USER
+        ========================================================= */}
 
-            <div>
-              <p className="font-semibold">
-                {user?.name ?? "User"}
-              </p>
+        <div className="border-t border-slate-100 p-4">
+          <div className="rounded-2xl bg-slate-50 p-3">
+            <div className="flex items-center gap-3">
+              {/* AVATAR */}
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0B4EA2] text-sm font-semibold text-white shadow-sm">
+                {user?.name?.charAt(0).toUpperCase() ?? "U"}
+              </div>
 
-              <p className="text-xs capitalize text-slate-500">
-                {user?.role ?? "-"}
-              </p>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-slate-800">
+                  {user?.name ?? "User"}
+                </p>
+
+                <p className="mt-0.5 text-[11px] capitalize text-slate-400">
+                  {user?.role ?? "-"}
+                </p>
+              </div>
             </div>
           </div>
 
+          {/* LOGOUT */}
           <button
             onClick={() => {
               logout();
               router.replace("/login");
             }}
-            className="flex w-full items-center gap-3 rounded-xl border border-red-200 px-4 py-3 text-red-600 hover:bg-red-50"
+            className="
+              mt-3 flex w-full items-center gap-3
+              rounded-xl px-4 py-3
+              text-sm font-medium
+              text-slate-500
+              transition
+              hover:bg-red-50
+              hover:text-red-600
+            "
           >
-            <LogOut size={18} />
-            Logout
+            <LogOut size={17} />
+
+            <span>Logout</span>
           </button>
+
+          <div className="mt-3 px-2">
+            <p className="text-[9px] uppercase tracking-[0.16em] text-slate-300">
+              PT Dahana
+            </p>
+          </div>
         </div>
       </aside>
     </>

@@ -547,35 +547,49 @@ export default function Header({
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur-xl">
       <div className="flex h-[82px] items-center justify-between px-6 lg:px-8">
 
-        {/* LEFT */}
+{/* LEFT */}
 
-        <div className="flex items-center gap-5">
+<div className="flex min-w-0 items-center gap-3">
 
-          {/* MOBILE */}
+  {/* MOBILE MENU */}
 
-          <button
-            onClick={onOpenSidebar}
-            className="rounded-xl border border-slate-200 p-2 transition hover:bg-slate-100 lg:hidden"
-          >
-            <Menu size={20} />
-          </button>
+  <button
+    onClick={onOpenSidebar}
+    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 lg:hidden"
+    aria-label="Buka menu"
+  >
+    <Menu size={19} />
+  </button>
 
-          {/* GREETING */}
+  {/* MOBILE TITLE */}
 
-          <div>
-            <p className="text-sm text-slate-500">
-              {greeting},
-            </p>
+  <div className="min-w-0 lg:hidden">
+    <p className="truncate text-sm font-semibold text-[#0B4EA2]">
+      System Approval 
+    </p>
 
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
-              {user?.name ?? "User"}
-            </h1>
+    <p className="text-[11px] text-slate-400">
+      PT DAHANA
+    </p>
+  </div>
 
-            <p className="mt-1 text-xs text-slate-400">
-              {currentTime}
-            </p>
-          </div>
-        </div>
+  {/* DESKTOP GREETING */}
+
+  <div className="hidden lg:block">
+    <p className="text-sm text-slate-500">
+      {greeting},
+    </p>
+
+    <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
+      {user?.name ?? "User"}
+    </h1>
+
+    <p className="mt-1 text-xs text-slate-400">
+      {currentTime}
+    </p>
+  </div>
+
+</div>
 
         {/* RIGHT */}
 

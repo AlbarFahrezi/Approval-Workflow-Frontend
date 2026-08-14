@@ -46,10 +46,6 @@ export default function DashboardPage() {
   const [approvalRequests, setApprovalRequests] =
     useState<ApprovalRequest[]>([]);
 
-  const pendingCount = approvalRequests.filter(
-    (item) => item.status === "submitted"
-  ).length;
-
   const [loading, setLoading] =
     useState(true);
 
@@ -58,6 +54,10 @@ export default function DashboardPage() {
 
   const [search, setSearch] =
     useState("");
+
+  const pendingCount = approvalRequests.filter(
+    (item) => item.status === "submitted"
+  ).length;
 
   const loadDashboard = useCallback(async () => {
     try {
@@ -140,15 +140,19 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#f4f7fa]">
+
+      {/* Sidebar */}
       <Sidebar
         user={user}
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         pendingCount={pendingCount}
-         
       />
 
+      {/* Main Content */}
       <div className="lg:pl-72">
+
+        {/* Header */}
         <Header
           user={user}
           search={search}
@@ -159,46 +163,29 @@ export default function DashboardPage() {
           approvalRequests={approvalRequests}
         />
 
-        <main className="space-y-7 p-6 lg:p-8">
+        {/* Dashboard Content */}
+        <main className="space-y-7 pt-8 pr-6 pb-8 pl-0 lg:pt-10 lg:pr-8 lg:pb-8 lg:pl-0">
 
-          {/* Welcome */}
-          <section>
-            <p className="text-sm text-slate-500">
-              Selamat datang kembali,
-            </p>
-
-            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-900">
-              {user.name}
-            </h1>
-
-            <p className="mt-3 text-sm leading-6 text-slate-500">
-              Pantau seluruh aktivitas approval,
-              requests, dan proses persetujuan
-              secara realtime.
-            </p>
-          </section>
-
-          {/* Summary */}
+          {/* Summary Cards */}
           <SummaryCards
             summary={summary}
             role={user.role}
           />
 
+          {/* Pending Approval khusus Manager */}
           {user.role === "manager" && (
             <PendingApproval
               requests={approvalRequests.filter(
-                (r) => r.status === "submitted"
+                (request) =>
+                  request.status === "submitted"
               )}
             />
           )}
 
-          {/* Chart + Timeline */}
+          {/* Statistics + Activity */}
           <section className="grid gap-6 xl:grid-cols-[2fr_1fr]">
-
             <StatisticsChart />
-
             <ActivityTimeline />
-
           </section>
 
           {/* Recent Requests */}
@@ -207,9 +194,7 @@ export default function DashboardPage() {
             requests={filteredRequests}
             onRefresh={loadDashboard}
             onViewAll={() =>
-              router.push(
-                "/dashboard/requests"
-              )
+              router.push("/dashboard/requests")
             }
             onDetail={(id) =>
               router.push(

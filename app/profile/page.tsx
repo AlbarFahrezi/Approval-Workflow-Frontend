@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-
   ArrowLeft,
   Camera,
   User,
@@ -15,7 +14,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-const API_URL = "http://127.0.0.1:8000/api";
+import api from "@/lib/axios";
 
 type UserData = {
   id: number;
@@ -30,7 +29,7 @@ type UserData = {
 };
 
 export default function ProfilePage() {
-    const router = useRouter();
+  const router = useRouter();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -50,36 +49,6 @@ export default function ProfilePage() {
 
   /*
   |--------------------------------------------------------------------------
-  | GET TOKEN
-  |--------------------------------------------------------------------------
-  */
-
-  const getToken = () => {
-    if (typeof window === "undefined") {
-      return null;
-    }
-
-    const keys = [
-      "approval_token",
-      "token",
-      "access_token",
-      "auth_token",
-      "accessToken",
-    ];
-
-    for (const key of keys) {
-      const value = localStorage.getItem(key);
-
-      if (value) {
-        return value;
-      }
-    }
-
-    return null;
-  };
-
-  /*
-  |--------------------------------------------------------------------------
   | GET PROFILE
   |--------------------------------------------------------------------------
   */
@@ -89,42 +58,56 @@ export default function ProfilePage() {
       setLoading(true);
       setErrorMessage("");
 
-      const token = getToken();
+      const response = await api.get("/profile");
 
-      if (!token) {
-        throw new Error(
-          "Token login tidak ditemukan. Silakan login kembali."
-        );
-      }
+      console.log("PROFILE RESPONSE:", response.data);
 
-      const response = await fetch(`${API_URL}/profile`, {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          result.message || "Gagal mengambil data profile."
-        );
-      }
-
-      const profile: UserData = result.data;
+      const profile: UserData = response.data.data;
 
       setUser(profile);
       setName(profile.name ?? "");
       setEmail(profile.email ?? "");
       setAvatarPreview(profile.avatar_url ?? null);
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Gagal mengambil data profile."
-      );
+
+      /*
+      |--------------------------------------------------------------------------
+      | UPDATE LOCAL USER
+      |--------------------------------------------------------------------------
+      */
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem(
+          "approval_user",
+          JSON.stringify(profile)
+        );
+      }
+    } catch (error: any) {
+      console.error("GET PROFILE ERROR:", error);
+
+      const message =
+        error?.response?.data?.message ||
+        "Gagal mengambil data profile.";
+
+      setErrorMessage(message);
+
+      /*
+      |--------------------------------------------------------------------------
+      | TOKEN INVALID / EXPIRED
+      |--------------------------------------------------------------------------
+      */
+
+      if (
+        error?.response?.status === 401
+      ) {
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("approval_token");
+          localStorage.removeItem("approval_user");
+        }
+
+        setErrorMessage(
+          "Session login sudah tidak valid. Silakan login kembali."
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -223,14 +206,6 @@ export default function ProfilePage() {
       setSuccessMessage("");
       setErrorMessage("");
 
-      const token = getToken();
-
-      if (!token) {
-        throw new Error(
-          "Token login tidak ditemukan. Silakan login kembali."
-        );
-      }
-
       const formData = new FormData();
 
       formData.append("name", name);
@@ -240,33 +215,60 @@ export default function ProfilePage() {
         formData.append("avatar", avatarFile);
       }
 
-      const response = await fetch(`${API_URL}/profile`, {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
+      /*
+      |--------------------------------------------------------------------------
+      | UPDATE PROFILE
+      |--------------------------------------------------------------------------
+      */
 
-      const result = await response.json();
+      const response = await api.post(
+        "/profile",
+        formData,
+        {
+          headers: {
+            Accept: "application/json",
+          },
+        }
+      );
 
-      if (!response.ok) {
-        throw new Error(
-          result.message || "Gagal memperbarui profile."
-        );
-      }
+      console.log(
+        "UPDATE PROFILE RESPONSE:",
+        response.data
+      );
 
-      const updatedUser: UserData = result.data;
+      const updatedUser: UserData =
+        response.data.data;
+
+      /*
+      |--------------------------------------------------------------------------
+      | UPDATE STATE
+      |--------------------------------------------------------------------------
+      */
 
       setUser(updatedUser);
       setName(updatedUser.name ?? "");
       setEmail(updatedUser.email ?? "");
-      setAvatarPreview(updatedUser.avatar_url ?? null);
+      setAvatarPreview(
+        updatedUser.avatar_url ?? null
+      );
       setAvatarFile(null);
 
+      /*
+      |--------------------------------------------------------------------------
+      | UPDATE LOCAL STORAGE USER
+      |--------------------------------------------------------------------------
+      */
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem(
+          "approval_user",
+          JSON.stringify(updatedUser)
+        );
+      }
+
       setSuccessMessage(
-        result.message || "Profile berhasil diperbarui."
+        response.data.message ||
+          "Profile berhasil diperbarui."
       );
 
       /*
@@ -278,12 +280,41 @@ export default function ProfilePage() {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Gagal memperbarui profile."
+    } catch (error: any) {
+      console.error(
+        "UPDATE PROFILE ERROR:",
+        error
       );
+
+      const message =
+        error?.response?.data?.message ||
+        "Gagal memperbarui profile.";
+
+      setErrorMessage(message);
+
+      /*
+      |--------------------------------------------------------------------------
+      | TOKEN INVALID / EXPIRED
+      |--------------------------------------------------------------------------
+      */
+
+      if (
+        error?.response?.status === 401
+      ) {
+        if (typeof window !== "undefined") {
+          localStorage.removeItem(
+            "approval_token"
+          );
+
+          localStorage.removeItem(
+            "approval_user"
+          );
+        }
+
+        setErrorMessage(
+          "Session login sudah tidak valid. Silakan login kembali."
+        );
+      }
     } finally {
       setSaving(false);
     }
@@ -313,6 +344,7 @@ export default function ProfilePage() {
               size={22}
               className="animate-spin"
             />
+
             Memuat profile...
           </div>
         </div>
@@ -333,32 +365,45 @@ export default function ProfilePage() {
         {/* HEADER */}
 
         <div className="mb-8">
-  <div className="mb-5">
-    <button
-      type="button"
-      onClick={() => router.push("/dashboard")}
-      className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-[#0B4EA2]"
-    >
-      <ArrowLeft size={18} />
-      Kembali ke Dashboard
-    </button>
-  </div>
 
-  <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
-    Profile
-  </h1>
+          <div className="mb-5">
 
-  <p className="mt-2 text-sm text-slate-500">
-    Kelola informasi akun dan keamanan profile kamu.
-  </p>
-</div>
+            <button
+              type="button"
+              onClick={() =>
+                router.push("/dashboard")
+              }
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-[#0B4EA2]"
+            >
+              <ArrowLeft size={18} />
+
+              Kembali ke Dashboard
+            </button>
+
+          </div>
+
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
+            Profile
+          </h1>
+
+          <p className="mt-2 text-sm text-slate-500">
+            Kelola informasi akun dan keamanan
+            profile kamu.
+          </p>
+
+        </div>
 
         {/* SUCCESS */}
 
         {successMessage && (
           <div className="mb-6 flex items-center gap-3 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm text-green-700">
+
             <CheckCircle2 size={19} />
-            <span>{successMessage}</span>
+
+            <span>
+              {successMessage}
+            </span>
+
           </div>
         )}
 
@@ -366,12 +411,18 @@ export default function ProfilePage() {
 
         {errorMessage && (
           <div className="mb-6 flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+
             <AlertCircle size={19} />
-            <span>{errorMessage}</span>
+
+            <span>
+              {errorMessage}
+            </span>
+
           </div>
         )}
 
         <form onSubmit={handleSubmit}>
+
           <div className="grid gap-6 lg:grid-cols-[410px_1fr]">
 
             {/* ======================================================
@@ -389,7 +440,9 @@ export default function ProfilePage() {
                   {avatarPreview ? (
                     <img
                       src={avatarPreview}
-                      alt={user?.name ?? "User"}
+                      alt={
+                        user?.name ?? "User"
+                      }
                       className="h-32 w-32 rounded-3xl object-cover shadow-lg ring-4 ring-white"
                     />
                   ) : (
@@ -416,9 +469,12 @@ export default function ProfilePage() {
                     ref={fileInputRef}
                     type="file"
                     accept="image/png,image/jpeg,image/jpg,image/webp"
-                    onChange={handleAvatarChange}
+                    onChange={
+                      handleAvatarChange
+                    }
                     className="hidden"
                   />
+
                 </div>
 
                 {/* NAME */}
@@ -456,12 +512,15 @@ export default function ProfilePage() {
                 {/* INFO */}
 
                 <p className="mt-6 text-center text-xs leading-5 text-slate-400">
-                  Klik tombol kamera untuk mengganti foto profile.
-                  Foto akan diperbarui setelah menekan tombol
-                  Simpan Perubahan.
+                  Klik tombol kamera untuk
+                  mengganti foto profile.
+                  Foto akan diperbarui setelah
+                  menekan tombol Simpan
+                  Perubahan.
                 </p>
 
               </div>
+
             </div>
 
             {/* ======================================================
@@ -471,13 +530,16 @@ export default function ProfilePage() {
             <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
 
               <div className="mb-7">
+
                 <h2 className="text-lg font-semibold text-slate-900">
                   Informasi Profile
                 </h2>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Perbarui nama, email, dan foto profile kamu.
+                  Perbarui nama, email, dan foto
+                  profile kamu.
                 </p>
+
               </div>
 
               {/* NAME */}
@@ -499,7 +561,9 @@ export default function ProfilePage() {
                     type="text"
                     value={name}
                     onChange={(event) =>
-                      setName(event.target.value)
+                      setName(
+                        event.target.value
+                      )
                     }
                     className="ml-3 w-full bg-transparent text-sm text-slate-800 outline-none"
                     placeholder="Masukkan nama"
@@ -507,6 +571,7 @@ export default function ProfilePage() {
                   />
 
                 </div>
+
               </div>
 
               {/* EMAIL */}
@@ -528,7 +593,9 @@ export default function ProfilePage() {
                     type="email"
                     value={email}
                     onChange={(event) =>
-                      setEmail(event.target.value)
+                      setEmail(
+                        event.target.value
+                      )
                     }
                     className="ml-3 w-full bg-transparent text-sm text-slate-800 outline-none"
                     placeholder="Masukkan email"
@@ -536,6 +603,7 @@ export default function ProfilePage() {
                   />
 
                 </div>
+
               </div>
 
               {/* ROLE */}
@@ -560,7 +628,8 @@ export default function ProfilePage() {
                 </div>
 
                 <p className="mt-2 text-xs text-slate-400">
-                  Role akun dikelola oleh administrator.
+                  Role akun dikelola oleh
+                  administrator.
                 </p>
 
               </div>
@@ -581,11 +650,13 @@ export default function ProfilePage() {
                         size={18}
                         className="animate-spin"
                       />
+
                       Menyimpan...
                     </>
                   ) : (
                     <>
                       <Save size={18} />
+
                       Simpan Perubahan
                     </>
                   )}
@@ -595,8 +666,11 @@ export default function ProfilePage() {
               </div>
 
             </div>
+
           </div>
+
         </form>
+
       </div>
     </main>
   );
