@@ -6,6 +6,7 @@ import type { User } from "@/types/auth";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+
 import {
   ArrowRight,
   Eye,
@@ -13,8 +14,8 @@ import {
   Loader2,
   LockKeyhole,
   Mail,
-  ShieldCheck,
 } from "lucide-react";
+
 import { toast } from "sonner";
 
 import { login } from "@/services/auth";
@@ -45,7 +46,10 @@ export default function LoginForm() {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: {
+      errors,
+      isSubmitting,
+    },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
   });
@@ -54,11 +58,37 @@ export default function LoginForm() {
     values: LoginFormValues
   ) => {
     try {
+      console.log(
+        "========== LOGIN START =========="
+      );
+
+      console.log(
+        "[LOGIN] Email:",
+        values.email
+      );
+
       const response = await login(values);
 
+      console.log(
+        "[LOGIN] API RESPONSE:",
+        response
+      );
+
+      /*
+      |--------------------------------------------------------------------------
+      | LOGIN RESPONSE
+      |--------------------------------------------------------------------------
+      */
+
       if (!response.success) {
+        console.error(
+          "[LOGIN] API RETURNED SUCCESS FALSE:",
+          response
+        );
+
         toast.error(
-          response.message || "Login gagal."
+          response.message ||
+            "Login gagal."
         );
 
         return;
@@ -71,13 +101,13 @@ export default function LoginForm() {
       */
 
       const token =
-        response.data.token ??
-        response.data.access_token ??
+        response.data?.token ??
+        response.data?.access_token ??
         null;
 
       if (!token) {
         console.error(
-          "TOKEN LOGIN TIDAK DITEMUKAN:",
+          "[LOGIN] TOKEN TIDAK DITEMUKAN:",
           response.data
         );
 
@@ -95,11 +125,13 @@ export default function LoginForm() {
       */
 
       const user =
-        response.data.user as User | undefined;
+        response.data?.user as
+          | User
+          | undefined;
 
       if (!user) {
         console.error(
-          "USER LOGIN TIDAK DITEMUKAN:",
+          "[LOGIN] USER TIDAK DITEMUKAN:",
           response.data
         );
 
@@ -112,86 +144,126 @@ export default function LoginForm() {
 
       /*
       |--------------------------------------------------------------------------
-      | STORAGE
+      | BERSIHKAN AUTH LAMA
       |--------------------------------------------------------------------------
-      |
-      | Ingat saya aktif:
-      | → localStorage
-      |
-      | Ingat saya tidak aktif:
-      | → sessionStorage
-      |
       */
 
-     
+      window.localStorage.removeItem(
+        "approval_token"
+      );
+
+      window.localStorage.removeItem(
+        "approval_user"
+      );
+
+      window.localStorage.removeItem(
+        "approval_remember_me"
+      );
+
+      window.sessionStorage.removeItem(
+        "approval_token"
+      );
+
+      window.sessionStorage.removeItem(
+        "approval_user"
+      );
+
+      window.sessionStorage.removeItem(
+        "approval_remember_me"
+      );
 
       /*
-/*
-|--------------------------------------------------------------------------
-| BERSIHKAN AUTH LAMA
-|--------------------------------------------------------------------------
-*/
+      |--------------------------------------------------------------------------
+      | SIMPAN AUTH
+      |--------------------------------------------------------------------------
+      */
 
-window.localStorage.removeItem("approval_token");
-window.localStorage.removeItem("approval_user");
-window.localStorage.removeItem("approval_remember_me");
+      if (rememberMe) {
+        window.localStorage.setItem(
+          "approval_token",
+          token
+        );
 
-window.sessionStorage.removeItem("approval_token");
-window.sessionStorage.removeItem("approval_user");
-window.sessionStorage.removeItem("approval_remember_me");
+        window.localStorage.setItem(
+          "approval_user",
+          JSON.stringify(user)
+        );
 
-/*
-|--------------------------------------------------------------------------
-| SIMPAN AUTH
-|--------------------------------------------------------------------------
-*/
+        window.localStorage.setItem(
+          "approval_remember_me",
+          "true"
+        );
+      } else {
+        window.sessionStorage.setItem(
+          "approval_token",
+          token
+        );
 
-window.localStorage.setItem(
-  "approval_token",
-  token
-);
+        window.sessionStorage.setItem(
+          "approval_user",
+          JSON.stringify(user)
+        );
 
-window.localStorage.setItem(
-  "approval_user",
-  JSON.stringify(user)
-);
+        window.sessionStorage.setItem(
+          "approval_remember_me",
+          "false"
+        );
+      }
 
-window.localStorage.setItem(
-  "approval_remember_me",
-  String(rememberMe)
-);
+      /*
+      |--------------------------------------------------------------------------
+      | VERIFY STORAGE
+      |--------------------------------------------------------------------------
+      */
 
-/*
-|--------------------------------------------------------------------------
-| VERIFY STORAGE
-|--------------------------------------------------------------------------
-*/
+      const storage =
+        rememberMe
+          ? window.localStorage
+          : window.sessionStorage;
 
-const savedToken =
-  window.localStorage.getItem("approval_token");
+      const savedToken =
+        storage.getItem(
+          "approval_token"
+        );
 
-const savedUser =
-  window.localStorage.getItem("approval_user");
+      const savedUser =
+        storage.getItem(
+          "approval_user"
+        );
 
-if (!savedToken || !savedUser) {
-  console.error("AUTH DATA GAGAL DISIMPAN");
+      if (
+        !savedToken ||
+        !savedUser
+      ) {
+        console.error(
+          "[LOGIN] AUTH DATA GAGAL DISIMPAN"
+        );
 
-  toast.error(
-    "Data login gagal disimpan."
-  );
+        toast.error(
+          "Data login gagal disimpan."
+        );
 
-  return;
-}
+        return;
+      }
 
-console.log(
-  "[LOGIN] Token tersimpan:",
-  savedToken ? "ADA" : "TIDAK ADA"
-);
+      console.log(
+        "[LOGIN] Token tersimpan:",
+        savedToken
+          ? "ADA"
+          : "TIDAK ADA"
+      );
 
-console.log(
-  "[LOGIN] User tersimpan:",
-  savedUser ? "ADA" : "TIDAK ADA"
-);
+      console.log(
+        "[LOGIN] User tersimpan:",
+        savedUser
+          ? "ADA"
+          : "TIDAK ADA"
+      );
+
+      console.log(
+        "[LOGIN] Role:",
+        user.role
+      );
 
       /*
       |--------------------------------------------------------------------------
@@ -204,43 +276,201 @@ console.log(
           "Login berhasil."
       );
 
+      console.log(
+        "========== LOGIN SUCCESS =========="
+      );
+
       /*
       |--------------------------------------------------------------------------
       | REDIRECT
       |--------------------------------------------------------------------------
       */
 
-      router.replace("/dashboard");
+      router.replace(
+        "/dashboard"
+      );
     } catch (error: unknown) {
-      console.error(
+      console.log(
+        "========================================"
+      );
+
+      console.log(
         "========== LOGIN ERROR =========="
       );
 
-      console.error(error);
+      console.log(
+        "========================================"
+      );
 
-      const axiosError = error as {
-        response?: {
-          status?: number;
-          data?: {
-            message?: string;
+      console.log(
+        "[LOGIN] ERROR OBJECT:",
+        error
+      );
+
+      /*
+      |--------------------------------------------------------------------------
+      | ERROR DETAILS
+      |--------------------------------------------------------------------------
+      */
+
+      if (
+        error instanceof Error
+      ) {
+        console.log(
+          "[LOGIN] ERROR NAME:",
+          error.name
+        );
+
+        console.log(
+          "[LOGIN] ERROR MESSAGE:",
+          error.message
+        );
+
+        console.log(
+          "[LOGIN] ERROR STACK:",
+          error.stack
+        );
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | AXIOS ERROR
+      |--------------------------------------------------------------------------
+      */
+
+      const axiosError =
+        error as {
+          response?: {
+            status?: number;
+            data?: unknown;
           };
-        };
-        message?: string;
-      };
 
-      const message =
-        axiosError.response?.data
-          ?.message ||
-        axiosError.message ||
+          request?: unknown;
+
+          message?: string;
+
+          code?: string;
+        };
+
+      console.log(
+        "[LOGIN] HTTP STATUS:",
+        axiosError.response
+          ?.status
+      );
+
+      console.log(
+        "[LOGIN] SERVER RESPONSE:",
+        axiosError.response
+          ?.data
+      );
+
+      console.log(
+        "[LOGIN] REQUEST:",
+        axiosError.request
+      );
+
+      console.log(
+        "[LOGIN] AXIOS MESSAGE:",
+        axiosError.message
+      );
+
+      console.log(
+        "[LOGIN] ERROR CODE:",
+        axiosError.code
+      );
+
+      /*
+      |--------------------------------------------------------------------------
+      | USER MESSAGE
+      |--------------------------------------------------------------------------
+      */
+
+      let message =
         "Tidak dapat terhubung ke server.";
 
+      const responseData =
+        axiosError.response
+          ?.data as
+          | {
+              message?: string;
+              error?: string;
+              errors?: Record<
+                string,
+                string[]
+              >;
+            }
+          | undefined;
+
+      if (
+        responseData?.message
+      ) {
+        message =
+          responseData.message;
+      } else if (
+        responseData?.error
+      ) {
+        message =
+          responseData.error;
+      } else if (
+        axiosError.message
+      ) {
+        message =
+          axiosError.message;
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | SPECIAL STATUS MESSAGE
+      |--------------------------------------------------------------------------
+      */
+
+      const status =
+        axiosError.response
+          ?.status;
+
+      if (status === 401) {
+        message =
+          responseData?.message ||
+          "Email atau password salah.";
+      }
+
+      if (status === 404) {
+        message =
+          responseData?.message ||
+          "Endpoint login tidak ditemukan.";
+      }
+
+      if (status === 422) {
+        message =
+          responseData?.message ||
+          "Data login tidak valid.";
+      }
+
+      if (status === 500) {
+        message =
+          responseData?.message ||
+          "Terjadi error pada server.";
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | SHOW ERROR
+      |--------------------------------------------------------------------------
+      */
+
       toast.error(message);
+
+      console.log(
+        "========================================"
+      );
     }
   };
 
   return (
     <form
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={handleSubmit(
+        onSubmit
+      )}
       className="w-full"
     >
       <div className="space-y-5">
@@ -337,7 +567,8 @@ console.log(
               type="button"
               onClick={() =>
                 setShowPassword(
-                  (current) => !current
+                  (current) =>
+                    !current
                 )
               }
               className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8aa0b2] hover:text-[#1e63a1]"
@@ -408,8 +639,6 @@ console.log(
 
       <div className="my-6 flex items-center gap-4">
         <span className="h-px flex-1 bg-[#dce4eb]" />
-
-        
 
         <span className="h-px flex-1 bg-[#dce4eb]" />
       </div>

@@ -164,7 +164,7 @@ export default function DashboardPage() {
         />
 
         {/* Dashboard Content */}
-        <main className="space-y-7 pt-8 pr-6 pb-8 pl-0 lg:pt-10 lg:pr-8 lg:pb-8 lg:pl-0">
+        <main className="space-y-7 pt-6 pr-6 pb-8 pl-0 lg:pt-8 lg:pr-8 lg:pb-8 lg:pl-0">
 
           {/* Summary Cards */}
           <SummaryCards

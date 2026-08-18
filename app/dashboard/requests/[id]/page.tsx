@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -63,11 +64,11 @@ export default function RequestDetailPage() {
     useState(false);
 
   const [confirmAction, setConfirmAction] = useState<
-  "submit" | "approve" | "delete" | null
->(null);
+    "submit" | "approve" | "delete" | null
+  >(null);
 
-const [confirmLoading, setConfirmLoading] =
-  useState(false);  
+  const [confirmLoading, setConfirmLoading] =
+    useState(false);
 
   /*
   |--------------------------------------------------------------------------
@@ -100,10 +101,13 @@ const [confirmLoading, setConfirmLoading] =
         const id = Number(params.id);
 
         if (!id) {
-          throw new Error("ID request tidak valid.");
+          throw new Error(
+            "ID request tidak valid."
+          );
         }
 
-        const data = await getApprovalRequest(id);
+        const data =
+          await getApprovalRequest(id);
 
         setRequest(data);
 
@@ -137,32 +141,34 @@ const [confirmLoading, setConfirmLoading] =
   |--------------------------------------------------------------------------
   */
 
- async function handleDelete() {
-  if (!request) return;
+  async function handleDelete() {
+    if (!request) return;
 
-  try {
-    setConfirmLoading(true);
+    try {
+      setConfirmLoading(true);
 
-    await deleteApprovalRequest(request.id);
+      await deleteApprovalRequest(
+        request.id
+      );
 
-    toast.success(
-      "Request berhasil dihapus."
-    );
+      toast.success(
+        "Request berhasil dihapus."
+      );
 
-    router.push(
-      "/dashboard/requests"
-    );
-  } catch (error) {
-    console.error(error);
+      router.push(
+        "/dashboard/requests"
+      );
+    } catch (error) {
+      console.error(error);
 
-    toast.error(
-      "Gagal menghapus request."
-    );
-  } finally {
-    setConfirmLoading(false);
-    setConfirmAction(null);
+      toast.error(
+        "Gagal menghapus request."
+      );
+    } finally {
+      setConfirmLoading(false);
+      setConfirmAction(null);
+    }
   }
-}
 
   /*
   |--------------------------------------------------------------------------
@@ -171,44 +177,44 @@ const [confirmLoading, setConfirmLoading] =
   */
 
   async function handleSubmit() {
-  if (!request) return;
+    if (!request) return;
 
-  try {
-    setConfirmLoading(true);
+    try {
+      setConfirmLoading(true);
 
-    await submitApprovalRequest(
-      request.id
-    );
+      await submitApprovalRequest(
+        request.id
+      );
 
-    const id = request.id;
+      const id = request.id;
 
-    const updatedRequest =
-      await getApprovalRequest(id);
+      const updatedRequest =
+        await getApprovalRequest(id);
 
-    const updatedTimeline =
-      await getApprovalTimeline(id);
+      const updatedTimeline =
+        await getApprovalTimeline(id);
 
-    const updatedHistory =
-      await getApprovalHistory(id);
+      const updatedHistory =
+        await getApprovalHistory(id);
 
-    setRequest(updatedRequest);
-    setTimeline(updatedTimeline);
-    setHistory(updatedHistory);
+      setRequest(updatedRequest);
+      setTimeline(updatedTimeline);
+      setHistory(updatedHistory);
 
-    toast.success(
-      "Request berhasil disubmit."
-    );
-  } catch (error) {
-    console.error(error);
+      toast.success(
+        "Request berhasil disubmit."
+      );
+    } catch (error) {
+      console.error(error);
 
-    toast.error(
-      "Gagal submit request."
-    );
-  } finally {
-    setConfirmLoading(false);
-    setConfirmAction(null);
+      toast.error(
+        "Gagal submit request."
+      );
+    } finally {
+      setConfirmLoading(false);
+      setConfirmAction(null);
+    }
   }
-}
 
   /*
   |--------------------------------------------------------------------------
@@ -216,45 +222,46 @@ const [confirmLoading, setConfirmLoading] =
   |--------------------------------------------------------------------------
   */
 
- async function handleApprove() {
-  if (!request) return;
+  async function handleApprove() {
+    if (!request) return;
 
-  try {
-    setConfirmLoading(true);
+    try {
+      setConfirmLoading(true);
 
-    await approveApprovalRequest(
-      request.id
-    );
+      await approveApprovalRequest(
+        request.id
+      );
 
-    const id = request.id;
+      const id = request.id;
 
-    const updatedRequest =
-      await getApprovalRequest(id);
+      const updatedRequest =
+        await getApprovalRequest(id);
 
-    const updatedTimeline =
-      await getApprovalTimeline(id);
+      const updatedTimeline =
+        await getApprovalTimeline(id);
 
-    const updatedHistory =
-      await getApprovalHistory(id);
+      const updatedHistory =
+        await getApprovalHistory(id);
 
-    setRequest(updatedRequest);
-    setTimeline(updatedTimeline);
-    setHistory(updatedHistory);
+      setRequest(updatedRequest);
+      setTimeline(updatedTimeline);
+      setHistory(updatedHistory);
 
-    toast.success(
-      "Request berhasil diapprove."
-    );
-  } catch (error) {
-    console.error(error);
+      toast.success(
+        "Request berhasil diapprove."
+      );
+    } catch (error) {
+      console.error(error);
 
-    toast.error(
-      "Gagal approve request."
-    );
-  } finally {
-    setConfirmLoading(false);
-    setConfirmAction(null);
+      toast.error(
+        "Gagal approve request."
+      );
+    } finally {
+      setConfirmLoading(false);
+      setConfirmAction(null);
+    }
   }
-}
+
   /*
   |--------------------------------------------------------------------------
   | Reject
@@ -397,6 +404,28 @@ const [confirmLoading, setConfirmLoading] =
 
   /*
   |--------------------------------------------------------------------------
+  | Permission
+  |--------------------------------------------------------------------------
+  |
+  | Draft:
+  | Employee dan Manager boleh Edit / Submit / Delete
+  |
+  | Submitted:
+  | Hanya Manager yang boleh Approve / Reject
+  |
+  */
+
+  const canManageDraft =
+    (currentUserRole === "employee" ||
+      currentUserRole === "manager") &&
+    normalizedStatus === "draft";
+
+  const canApprove =
+    currentUserRole === "manager" &&
+    normalizedStatus === "submitted";
+
+  /*
+  |--------------------------------------------------------------------------
   | Render
   |--------------------------------------------------------------------------
   */
@@ -443,92 +472,96 @@ const [confirmLoading, setConfirmLoading] =
         <div className="flex flex-wrap gap-3">
 
           {/* ==========================================================
-              EMPLOYEE - DRAFT
+              DRAFT ACTIONS
           =========================================================== */}
 
-          {currentUserRole === "employee" &&
-            normalizedStatus === "draft" && (
-              <>
+          {canManageDraft && (
+            <>
 
-                {/* Edit */}
+              {/* Edit */}
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    router.push(
-                      `/dashboard/requests/${request.id}/edit`
-                    )
-                  }
-                  className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-5 py-3 font-semibold text-blue-700 transition hover:bg-blue-100"
-                >
-                  <Pencil size={18} />
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(
+                    `/dashboard/requests/${request.id}/edit`
+                  )
+                }
+                className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-5 py-3 font-semibold text-blue-700 transition hover:bg-blue-100"
+              >
+                <Pencil size={18} />
 
-                  Edit
-                </button>
+                Edit
+              </button>
 
-                {/* Submit */}
+              {/* Submit */}
 
-                <button
-                  type="button"
-                  onClick={() => setConfirmAction("submit")}
-                  className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-5 py-3 font-semibold text-white transition hover:bg-green-700"
-                >
-                  <Send size={18} />
+              <button
+                type="button"
+                onClick={() =>
+                  setConfirmAction("submit")
+                }
+                className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-5 py-3 font-semibold text-white transition hover:bg-green-700"
+              >
+                <Send size={18} />
 
-                  Submit
-                </button>
+                Submit
+              </button>
 
-                {/* Delete */}
+              {/* Delete */}
 
-                <button
-                  type="button"
-                   onClick={() => setConfirmAction("delete")}
-                  className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 font-semibold text-white transition hover:bg-red-700"
-                >
-                  <Trash2 size={18} />
+              <button
+                type="button"
+                onClick={() =>
+                  setConfirmAction("delete")
+                }
+                className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 font-semibold text-white transition hover:bg-red-700"
+              >
+                <Trash2 size={18} />
 
-                  Delete
-                </button>
+                Delete
+              </button>
 
-              </>
-            )}
+            </>
+          )}
 
           {/* ==========================================================
               MANAGER - SUBMITTED
           =========================================================== */}
 
-          {currentUserRole === "manager" &&
-            normalizedStatus === "submitted" && (
-              <>
+          {canApprove && (
+            <>
 
-                {/* Approve */}
+              {/* Approve */}
 
-                <button
-                  type="button"
-                  onClick={() => setConfirmAction("approve")}
-                  className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-5 py-3 font-semibold text-white transition hover:bg-green-700"
-                >
-                  <CheckCircle2 size={18} />
+              <button
+                type="button"
+                onClick={() =>
+                  setConfirmAction("approve")
+                }
+                className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-5 py-3 font-semibold text-white transition hover:bg-green-700"
+              >
+                <CheckCircle2 size={18} />
 
-                  Approve
-                </button>
+                Approve
+              </button>
 
-                {/* Reject */}
+              {/* Reject */}
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    setShowRejectModal(true)
-                  }
-                  className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 font-semibold text-white transition hover:bg-red-700"
-                >
-                  <XCircle size={18} />
+              <button
+                type="button"
+                onClick={() =>
+                  setShowRejectModal(true)
+                }
+                className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 font-semibold text-white transition hover:bg-red-700"
+              >
+                <XCircle size={18} />
 
-                  Reject
-                </button>
+                Reject
+              </button>
 
-              </>
-            )}
+            </>
+          )}
 
         </div>
 
@@ -741,7 +774,8 @@ const [confirmLoading, setConfirmLoading] =
                       ).toLocaleString(
                         "id-ID"
                       )
-                    : "-"}
+                    : "-"
+                  }
                 </p>
 
               </div>
@@ -944,145 +978,177 @@ const [confirmLoading, setConfirmLoading] =
         )}
 
       </div>
-      
+
       {/* ================================================================
-    CONFIRMATION MODAL
-================================================================= */}
+          CONFIRMATION MODAL
+      ================================================================= */}
 
-{confirmAction && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+      {confirmAction && (
 
-    <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
 
-      {/* Header */}
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
 
-      <div className="flex items-start gap-4">
+            {/* Header */}
 
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-yellow-100">
-          <AlertTriangle
-            size={24}
-            className="text-yellow-600"
-          />
+            <div className="flex items-start gap-4">
+
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-yellow-100">
+
+                <AlertTriangle
+                  size={24}
+                  className="text-yellow-600"
+                />
+
+              </div>
+
+              <div>
+
+                <h2 className="text-xl font-bold text-slate-900">
+                  Konfirmasi
+                </h2>
+
+                <p className="mt-1 text-sm leading-6 text-slate-500">
+
+                  {confirmAction === "submit" &&
+                    "Yakin ingin submit request ini?"}
+
+                  {confirmAction === "approve" &&
+                    "Yakin ingin approve request ini?"}
+
+                  {confirmAction === "delete" &&
+                    "Yakin ingin menghapus request ini? Data yang dihapus tidak dapat dikembalikan."}
+
+                </p>
+
+              </div>
+
+            </div>
+
+            {/* Request Info */}
+
+            <div className="mt-5 rounded-xl bg-slate-50 p-4">
+
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                Request
+              </p>
+
+              <p className="mt-1 font-semibold text-slate-800">
+                {request.title}
+              </p>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Request ID #{request.id}
+              </p>
+
+            </div>
+
+            {/* Buttons */}
+
+            <div className="mt-6 flex justify-end gap-3">
+
+              <button
+                type="button"
+                disabled={confirmLoading}
+                onClick={() => {
+                  setConfirmAction(null);
+                  setConfirmLoading(false);
+                }}
+                className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-50"
+              >
+                Batal
+              </button>
+
+              <button
+                type="button"
+                disabled={confirmLoading}
+                onClick={() => {
+
+                  if (
+                    confirmAction ===
+                    "submit"
+                  ) {
+                    handleSubmit();
+                  }
+
+                  if (
+                    confirmAction ===
+                    "approve"
+                  ) {
+                    handleApprove();
+                  }
+
+                  if (
+                    confirmAction ===
+                    "delete"
+                  ) {
+                    handleDelete();
+                  }
+
+                }}
+                className={`inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                  confirmAction === "delete"
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-[#0B4EA2] hover:bg-[#093D80]"
+                }`}
+              >
+
+                {confirmLoading ? (
+
+                  <>
+
+                    <Loader2
+                      size={18}
+                      className="animate-spin"
+                    />
+
+                    Memproses...
+
+                  </>
+
+                ) : (
+
+                  <>
+
+                    {confirmAction ===
+                      "submit" && (
+                      <>
+                        <Send size={18} />
+                        Ya, Submit
+                      </>
+                    )}
+
+                    {confirmAction ===
+                      "approve" && (
+                      <>
+                        <CheckCircle2
+                          size={18}
+                        />
+                        Ya, Approve
+                      </>
+                    )}
+
+                    {confirmAction ===
+                      "delete" && (
+                      <>
+                        <Trash2 size={18} />
+                        Ya, Hapus
+                      </>
+                    )}
+
+                  </>
+
+                )}
+
+              </button>
+
+            </div>
+
+          </div>
+
         </div>
 
-        <div>
-          <h2 className="text-xl font-bold text-slate-900">
-            Konfirmasi
-          </h2>
-
-          <p className="mt-1 text-sm leading-6 text-slate-500">
-            {confirmAction === "submit" &&
-              "Yakin ingin submit request ini?"}
-
-            {confirmAction === "approve" &&
-              "Yakin ingin approve request ini?"}
-
-            {confirmAction === "delete" &&
-              "Yakin ingin menghapus request ini? Data yang dihapus tidak dapat dikembalikan."}
-          </p>
-        </div>
-
-      </div>
-
-      {/* Request Info */}
-
-      <div className="mt-5 rounded-xl bg-slate-50 p-4">
-
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-          Request
-        </p>
-
-        <p className="mt-1 font-semibold text-slate-800">
-          {request.title}
-        </p>
-
-        <p className="mt-1 text-sm text-slate-500">
-          Request ID #{request.id}
-        </p>
-
-      </div>
-
-      {/* Buttons */}
-
-      <div className="mt-6 flex justify-end gap-3">
-
-        <button
-          type="button"
-          disabled={confirmLoading}
-          onClick={() => {
-            setConfirmAction(null);
-            setConfirmLoading(false);
-          }}
-          className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-50"
-        >
-          Batal
-        </button>
-
-        <button
-          type="button"
-          disabled={confirmLoading}
-          onClick={() => {
-            if (confirmAction === "submit") {
-              handleSubmit();
-            }
-
-            if (confirmAction === "approve") {
-              handleApprove();
-            }
-
-            if (confirmAction === "delete") {
-              handleDelete();
-            }
-          }}
-          className={`inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50 ${
-            confirmAction === "delete"
-              ? "bg-red-600 hover:bg-red-700"
-              : "bg-[#0B4EA2] hover:bg-[#093D80]"
-          }`}
-        >
-
-          {confirmLoading ? (
-            <>
-              <Loader2
-                size={18}
-                className="animate-spin"
-              />
-
-              Memproses...
-            </>
-          ) : (
-            <>
-              {confirmAction === "submit" && (
-                <>
-                  <Send size={18} />
-                  Ya, Submit
-                </>
-              )}
-
-              {confirmAction === "approve" && (
-                <>
-                  <CheckCircle2 size={18} />
-                  Ya, Approve
-                </>
-              )}
-
-              {confirmAction === "delete" && (
-                <>
-                  <Trash2 size={18} />
-                  Ya, Hapus
-                </>
-              )}
-            </>
-          )}
-
-        </button>
-
-      </div>
-
-    </div>
-
-  </div>
-)}
+      )}
 
       {/* ================================================================
           REJECT MODAL
@@ -1221,20 +1287,28 @@ const [confirmLoading, setConfirmLoading] =
               >
 
                 {rejectLoading ? (
+
                   <>
+
                     <Loader2
                       size={18}
                       className="animate-spin"
                     />
 
                     Menolak...
+
                   </>
+
                 ) : (
+
                   <>
+
                     <XCircle size={18} />
 
                     Tolak Request
+
                   </>
+
                 )}
 
               </button>

@@ -54,7 +54,8 @@ type HeaderProps = {
   onLogout?: () => void;
 };
 
-const NOTIFICATION_SETTING_KEY = "approval_notifications_enabled";
+const NOTIFICATION_SETTING_KEY =
+  "approval_notifications_enabled";
 
 export default function Header({
   user,
@@ -67,7 +68,8 @@ export default function Header({
   const router = useRouter();
 
   const [currentTime, setCurrentTime] = useState("");
-  const [showNotifications, setShowNotifications] = useState(false);
+  const [showNotifications, setShowNotifications] =
+    useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showSearchResults, setShowSearchResults] =
     useState(false);
@@ -79,18 +81,17 @@ export default function Header({
   const [notificationLoading, setNotificationLoading] =
     useState(false);
 
-  /*
-  |--------------------------------------------------------------------------
-  | NOTIFICATION ON / OFF
-  |--------------------------------------------------------------------------
-  */
-
   const [notificationsEnabled, setNotificationsEnabled] =
     useState(true);
 
-  const notificationRef = useRef<HTMLDivElement>(null);
-  const profileRef = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLDivElement>(null);
+  const notificationRef =
+    useRef<HTMLDivElement>(null);
+
+  const profileRef =
+    useRef<HTMLDivElement>(null);
+
+  const searchRef =
+    useRef<HTMLDivElement>(null);
 
   /*
   |--------------------------------------------------------------------------
@@ -146,9 +147,17 @@ export default function Header({
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
 
-    if (hour < 11) return "Selamat Pagi";
-    if (hour < 15) return "Selamat Siang";
-    if (hour < 18) return "Selamat Sore";
+    if (hour < 11) {
+      return "Selamat Pagi";
+    }
+
+    if (hour < 15) {
+      return "Selamat Siang";
+    }
+
+    if (hour < 18) {
+      return "Selamat Sore";
+    }
 
     return "Selamat Malam";
   }, []);
@@ -218,7 +227,8 @@ export default function Header({
   ): NotificationItem => {
     const status = notification.data.status;
 
-    let type: NotificationItem["type"] = "pending";
+    let type: NotificationItem["type"] =
+      "pending";
 
     if (status === "approved") {
       type = "approved";
@@ -335,11 +345,10 @@ export default function Header({
     if (!nextValue) {
       setNotifications([]);
       setShowNotifications(false);
+      return;
     }
 
-    if (nextValue) {
-      void loadNotifications();
-    }
+    void loadNotifications();
   };
 
   /*
@@ -349,7 +358,9 @@ export default function Header({
   */
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (
+      event: MouseEvent
+    ) => {
       const target = event.target as Node;
 
       if (
@@ -398,7 +409,7 @@ export default function Header({
   ) => {
     if (type === "approved") {
       return (
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100 text-green-600">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-100 text-green-600">
           <CheckCircle2 size={19} />
         </div>
       );
@@ -406,14 +417,14 @@ export default function Header({
 
     if (type === "rejected") {
       return (
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-100 text-red-600">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600">
           <XCircle size={19} />
         </div>
       );
     }
 
     return (
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-100 text-yellow-600">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-yellow-100 text-yellow-600">
         <Clock3 size={19} />
       </div>
     );
@@ -544,58 +555,109 @@ export default function Header({
   */
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur-xl">
-      <div className="flex h-[82px] items-center justify-between px-6 lg:px-8">
+    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur-xl">
+      <div className="flex min-h-[92px] items-center justify-between px-4 pr-6 lg:px-0 lg:pr-8">
 
-{/* LEFT */}
+        {/* ================================================================ */}
+        {/* LEFT SIDE                                                        */}
+        {/* ================================================================ */}
 
-<div className="flex min-w-0 items-center gap-3">
+        <div className="flex min-w-0 items-center">
 
-  {/* MOBILE MENU */}
+          {/* MOBILE MENU */}
+          <button
+            type="button"
+            onClick={onOpenSidebar}
+            className="ml-0 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 lg:hidden"
+            aria-label="Buka menu"
+          >
+            <Menu size={19} />
+          </button>
 
-  <button
-    onClick={onOpenSidebar}
-    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 lg:hidden"
-    aria-label="Buka menu"
-  >
-    <Menu size={19} />
-  </button>
+          {/* MOBILE TITLE */}
+          <div className="ml-3 min-w-0 lg:hidden">
+            <p className="truncate text-sm font-semibold text-[#0B4EA2]">
+              System Approval
+            </p>
 
-  {/* MOBILE TITLE */}
+            <p className="text-[11px] text-slate-400">
+              PT DAHANA
+            </p>
+          </div>
 
-  <div className="min-w-0 lg:hidden">
-    <p className="truncate text-sm font-semibold text-[#0B4EA2]">
-      System Approval 
-    </p>
+          {/* ============================================================ */}
+          {/* DESKTOP GREETING                                             */}
+          {/* ============================================================ */}
 
-    <p className="text-[11px] text-slate-400">
-      PT DAHANA
-    </p>
-  </div>
+          <div className="hidden items-stretch lg:flex">
 
-  {/* DESKTOP GREETING */}
+            {/* ACCENT */}
+            <div className="w-1.5 shrink-0 bg-gradient-to-b from-[#0B4EA2] via-[#1677D2] to-[#4DA3FF]" />
 
-  <div className="hidden lg:block">
-    <p className="text-sm text-slate-500">
-      {greeting},
-    </p>
+            {/* GREETING CONTENT */}
+            <div className="flex min-h-[92px] items-center pl-6">
 
-    <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
-      {user?.name ?? "User"}
-    </h1>
+              <div className="flex items-center gap-4">
 
-    <p className="mt-1 text-xs text-slate-400">
-      {currentTime}
-    </p>
-  </div>
+                {/* AVATAR */}
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={user?.name ?? "User"}
+                    className="h-12 w-12 shrink-0 rounded-2xl object-cover shadow-sm ring-1 ring-slate-200"
+                  />
+                ) : (
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0B4EA2] to-[#1677D2] text-lg font-bold text-white shadow-sm">
+                    {initial}
+                  </div>
+                )}
 
-</div>
+                {/* USER INFO */}
+                <div className="flex flex-col justify-center">
 
-        {/* RIGHT */}
+                  {/* GREETING */}
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-sm" />
+
+                    <p className="text-sm font-medium text-slate-500">
+                      {greeting}
+                    </p>
+                  </div>
+
+                  {/* NAME */}
+                  <h1 className="mt-0.5 text-2xl font-bold tracking-tight text-slate-900">
+                    {user?.name ?? "User"}
+                  </h1>
+
+                  {/* TIME + ROLE */}
+                  <div className="mt-0.5 flex items-center gap-2">
+
+                    <p className="text-xs text-slate-400">
+                      {currentTime}
+                    </p>
+
+                    <span className="h-1 w-1 rounded-full bg-slate-300" />
+
+                    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold capitalize text-[#0B4EA2]">
+                      {user?.role ?? "-"}
+                    </span>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ================================================================ */}
+        {/* RIGHT SIDE                                                       */}
+        {/* ================================================================ */}
 
         <div className="flex items-center gap-3">
 
-          {/* SEARCH */}
+          {/* ============================================================ */}
+          {/* SEARCH                                                        */}
+          {/* ============================================================ */}
 
           <div
             ref={searchRef}
@@ -622,8 +684,9 @@ export default function Header({
                     setShowSearchResults(true);
                   }
                 }}
-                onChange={(e) => {
-                  const value = e.target.value;
+                onChange={(event) => {
+                  const value =
+                    event.target.value;
 
                   onSearch(value);
 
@@ -650,13 +713,13 @@ export default function Header({
             </div>
 
             {/* SEARCH DROPDOWN */}
-
             {showSearchResults &&
               search.trim() && (
                 <div className="absolute right-0 top-[58px] z-50 w-[380px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
-                  {/* HEADER */}
 
+                  {/* HEADER */}
                   <div className="border-b border-slate-100 px-5 py-4">
+
                     <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                       Hasil Pencarian
                     </p>
@@ -666,69 +729,82 @@ export default function Header({
                         ? `${searchResults.length} request ditemukan`
                         : "Tidak ada request yang cocok"}
                     </p>
+
                   </div>
 
                   {/* RESULTS */}
-
                   {searchResults.length > 0 ? (
                     <div className="max-h-[360px] overflow-y-auto">
-                      {searchResults.map((request) => (
-                        <button
-                          key={request.id}
-                          type="button"
-                          onClick={() =>
-                            handleSearchResultClick(
-                              request
-                            )
-                          }
-                          className="flex w-full items-start gap-3 border-b border-slate-100 px-5 py-4 text-left transition hover:bg-blue-50"
-                        >
-                          <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#0B4EA2]">
-                            <Search size={17} />
-                          </div>
 
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-start justify-between gap-3">
-                              <p className="truncate text-sm font-semibold text-slate-800">
-                                {request.title}
-                              </p>
+                      {searchResults.map(
+                        (request) => (
+                          <button
+                            key={request.id}
+                            type="button"
+                            onClick={() =>
+                              handleSearchResultClick(
+                                request
+                              )
+                            }
+                            className="flex w-full items-start gap-3 border-b border-slate-100 px-5 py-4 text-left transition hover:bg-blue-50"
+                          >
 
-                              <span
-                                className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold ${
-                                  request.status ===
-                                  "approved"
-                                    ? "bg-green-100 text-green-700"
-                                    : request.status ===
-                                      "rejected"
-                                    ? "bg-red-100 text-red-700"
-                                    : request.status ===
-                                      "submitted"
-                                    ? "bg-yellow-100 text-yellow-700"
-                                    : "bg-slate-100 text-slate-600"
-                                }`}
-                              >
-                                {request.status}
-                              </span>
+                            {/* ICON */}
+                            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#0B4EA2]">
+                              <Search size={17} />
                             </div>
 
-                            <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
-                              {request.description}
-                            </p>
+                            {/* CONTENT */}
+                            <div className="min-w-0 flex-1">
 
-                            <p className="mt-2 text-[11px] text-slate-400">
-                              Request #{request.id}
-                            </p>
-                          </div>
+                              <div className="flex items-start justify-between gap-3">
 
-                          <ChevronDown
-                            size={16}
-                            className="-rotate-90 mt-2 shrink-0 text-slate-300"
-                          />
-                        </button>
-                      ))}
+                                <p className="truncate text-sm font-semibold text-slate-800">
+                                  {request.title}
+                                </p>
+
+                                <span
+                                  className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold ${
+                                    request.status ===
+                                    "approved"
+                                      ? "bg-green-100 text-green-700"
+                                      : request.status ===
+                                        "rejected"
+                                      ? "bg-red-100 text-red-700"
+                                      : request.status ===
+                                        "submitted"
+                                      ? "bg-yellow-100 text-yellow-700"
+                                      : "bg-slate-100 text-slate-600"
+                                  }`}
+                                >
+                                  {request.status}
+                                </span>
+
+                              </div>
+
+                              <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
+                                {request.description}
+                              </p>
+
+                              <p className="mt-2 text-[11px] text-slate-400">
+                                Request #{request.id}
+                              </p>
+
+                            </div>
+
+                            <ChevronDown
+                              size={16}
+                              className="mt-2 shrink-0 -rotate-90 text-slate-300"
+                            />
+
+                          </button>
+                        )
+                      )}
+
                     </div>
                   ) : (
                     <div className="px-5 py-10 text-center">
+
                       <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100">
                         <Search
                           size={22}
@@ -743,11 +819,14 @@ export default function Header({
                       <p className="mt-1 text-xs text-slate-400">
                         Coba gunakan kata kunci lain.
                       </p>
+
                     </div>
                   )}
 
+                  {/* FOOTER */}
                   {searchResults.length > 0 && (
                     <div className="border-t border-slate-200 p-3">
+
                       <button
                         type="button"
                         onClick={() => {
@@ -761,13 +840,17 @@ export default function Header({
                       >
                         Lihat Semua Request →
                       </button>
+
                     </div>
                   )}
+
                 </div>
               )}
           </div>
 
-          {/* NOTIFICATION */}
+          {/* ============================================================ */}
+          {/* NOTIFICATION                                                  */}
+          {/* ============================================================ */}
 
           <div
             ref={notificationRef}
@@ -775,8 +858,8 @@ export default function Header({
           >
 
             {/* BELL BUTTON */}
-
             <button
+              type="button"
               onClick={() => {
                 if (!notificationsEnabled) {
                   toggleNotifications();
@@ -810,7 +893,6 @@ export default function Header({
               )}
 
               {/* BADGE */}
-
               {notificationsEnabled &&
                 unreadCount > 0 && (
                   <>
@@ -823,19 +905,19 @@ export default function Header({
                     </span>
                   </>
                 )}
+
             </button>
 
-            {/* DROPDOWN */}
-
+            {/* NOTIFICATION DROPDOWN */}
             {showNotifications &&
               notificationsEnabled && (
-                <div className="absolute right-0 top-[58px] w-[380px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+                <div className="absolute right-0 top-[58px] z-50 w-[380px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
 
                   {/* HEADER */}
-
                   <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
 
                     <div>
+
                       <h3 className="text-base font-semibold text-slate-900">
                         Notifikasi
                       </h3>
@@ -845,12 +927,14 @@ export default function Header({
                           ? `${unreadCount} notifikasi belum dibaca`
                           : "Semua sudah dibaca"}
                       </p>
+
                     </div>
 
                     <div className="flex items-center gap-2">
 
                       {unreadCount > 0 && (
                         <button
+                          type="button"
                           onClick={() =>
                             void markAllAsRead()
                           }
@@ -861,9 +945,8 @@ export default function Header({
                         </button>
                       )}
 
-                      {/* SETTINGS TOGGLE */}
-
                       <button
+                        type="button"
                         onClick={toggleNotifications}
                         className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
                         title="Matikan notifikasi"
@@ -872,10 +955,10 @@ export default function Header({
                       </button>
 
                     </div>
+
                   </div>
 
                   {/* LIST */}
-
                   <div className="max-h-[390px] overflow-y-auto">
 
                     {notificationLoading ? (
@@ -909,6 +992,7 @@ export default function Header({
                         (notification) => (
                           <button
                             key={notification.id}
+                            type="button"
                             onClick={() =>
                               void handleNotificationClick(
                                 notification
@@ -934,7 +1018,7 @@ export default function Header({
                                 </p>
 
                                 {!notification.read && (
-                                  <span className="mt-1 h-2 w-2 flex-shrink-0 rounded-full bg-blue-600" />
+                                  <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-blue-600" />
                                 )}
 
                               </div>
@@ -948,6 +1032,7 @@ export default function Header({
                               </p>
 
                             </div>
+
                           </button>
                         )
                       )
@@ -956,10 +1041,10 @@ export default function Header({
                   </div>
 
                   {/* FOOTER */}
-
                   <div className="border-t border-slate-200 p-3">
 
                     <button
+                      type="button"
                       onClick={() => {
                         setShowNotifications(false);
                         router.push("/notifications");
@@ -975,14 +1060,18 @@ export default function Header({
               )}
           </div>
 
-          {/* PROFILE */}
+          {/* ============================================================ */}
+          {/* PROFILE                                                       */}
+          {/* ============================================================ */}
 
           <div
             ref={profileRef}
             className="relative"
           >
 
+            {/* PROFILE BUTTON */}
             <button
+              type="button"
               onClick={() => {
                 setShowProfile(
                   (current) => !current
@@ -997,6 +1086,7 @@ export default function Header({
               }`}
             >
 
+              {/* AVATAR */}
               {avatarUrl ? (
                 <img
                   src={avatarUrl}
@@ -1009,6 +1099,7 @@ export default function Header({
                 </div>
               )}
 
+              {/* USER */}
               <div className="hidden text-left xl:block">
 
                 <p className="text-sm font-semibold text-slate-800">
@@ -1021,6 +1112,7 @@ export default function Header({
 
               </div>
 
+              {/* ARROW */}
               <ChevronDown
                 size={18}
                 className={`text-slate-400 transition ${
@@ -1033,10 +1125,10 @@ export default function Header({
             </button>
 
             {/* PROFILE DROPDOWN */}
-
             {showProfile && (
-              <div className="absolute right-0 top-[58px] w-[250px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+              <div className="absolute right-0 top-[58px] z-50 w-[250px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
 
+                {/* PROFILE HEADER */}
                 <div className="border-b border-slate-100 px-4 py-4">
 
                   <div className="flex items-center gap-3">
@@ -1069,9 +1161,11 @@ export default function Header({
 
                 </div>
 
+                {/* MENU */}
                 <div className="p-2">
 
                   <button
+                    type="button"
                     onClick={openProfile}
                     className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-slate-700 transition hover:bg-slate-50"
                   >
@@ -1084,6 +1178,7 @@ export default function Header({
                   </button>
 
                   <button
+                    type="button"
                     onClick={openSettings}
                     className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-slate-700 transition hover:bg-slate-50"
                   >
@@ -1097,9 +1192,11 @@ export default function Header({
 
                 </div>
 
+                {/* LOGOUT */}
                 <div className="border-t border-slate-100 p-2">
 
                   <button
+                    type="button"
                     onClick={handleLogout}
                     className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-red-600 transition hover:bg-red-50"
                   >

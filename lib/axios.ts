@@ -12,7 +12,7 @@ const api = axios.create({
 |--------------------------------------------------------------------------
 | REQUEST INTERCEPTOR
 |--------------------------------------------------------------------------
-| Ambil token dari localStorage menggunakan key yang sama dengan login.
+| Selalu ambil token TERBARU dari localStorage setiap request.
 */
 
 api.interceptors.request.use(
@@ -21,13 +21,44 @@ api.interceptors.request.use(
       const token = localStorage.getItem("approval_token");
 
       console.log(
-        "[AXIOS] Token:",
+        "[AXIOS] ================================"
+      );
+
+      console.log(
+        "[AXIOS] REQUEST:",
+        config.method?.toUpperCase(),
+        config.url
+      );
+
+      console.log(
+        "[AXIOS] TOKEN:",
         token ? "ADA" : "TIDAK ADA"
       );
 
+      /*
+      |--------------------------------------------------------------------------
+      | Authorization
+      |--------------------------------------------------------------------------
+      */
+
       if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+        config.headers = config.headers ?? {};
+
+        config.headers.Authorization =
+          `Bearer ${token}`;
+
+        console.log(
+          "[AXIOS] Authorization: Bearer [TOKEN ADA]"
+        );
+      } else {
+        console.warn(
+          "[AXIOS] ⚠️ TOKEN TIDAK DITEMUKAN"
+        );
       }
+
+      console.log(
+        "[AXIOS] ================================"
+      );
     }
 
     return config;
@@ -41,7 +72,6 @@ api.interceptors.request.use(
 |--------------------------------------------------------------------------
 | RESPONSE INTERCEPTOR
 |--------------------------------------------------------------------------
-| Kalau token expired / tidak valid, bersihkan session lokal.
 */
 
 api.interceptors.response.use(
@@ -49,14 +79,43 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response?.status === 401) {
+    const status = error.response?.status;
+
+    console.error(
+      "[AXIOS] RESPONSE ERROR:",
+      status,
+      error.config?.url
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | 401
+    |--------------------------------------------------------------------------
+    | Jangan langsung hapus token untuk semua 401.
+    | Kita perlu melihat dulu apakah token memang invalid.
+    */
+
+    if (status === 401) {
       console.warn(
-        "[AXIOS] Unauthorized - token tidak valid / expired."
+        "[AXIOS] 401 Unauthorized"
       );
 
       if (typeof window !== "undefined") {
-        localStorage.removeItem("approval_token");
-        localStorage.removeItem("approval_user");
+        const token =
+          localStorage.getItem("approval_token");
+
+        console.warn(
+          "[AXIOS] Token saat menerima 401:",
+          token ? "MASIH ADA" : "SUDAH TIDAK ADA"
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Jangan hapus token otomatis dulu.
+        |--------------------------------------------------------------------------
+        | Ini penting untuk debugging supaya token tidak hilang
+        | gara-gara satu request gagal.
+        */
       }
     }
 
