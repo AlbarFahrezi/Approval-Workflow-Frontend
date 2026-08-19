@@ -415,6 +415,144 @@ export default function RequestsPage() {
         </div>
 
         {/* ============================================================
+            REQUEST TABLE AREA
+        ============================================================ */}
+
+        <div className="rounded-lg border border-slate-200 bg-white">
+
+          {/* HEADER */}
+
+          <div className="border-b border-slate-200 px-5 py-4">
+
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+
+              <div>
+
+                <h2 className="text-base font-semibold text-slate-900">
+                  Daftar Request
+                </h2>
+
+                <p className="mt-1 text-xs text-slate-500">
+                  Menampilkan request sesuai filter yang dipilih.
+                </p>
+
+              </div>
+
+              <div className="text-xs text-slate-400">
+
+                {filteredRequests.length} dari{" "}
+                {requests.length} request
+
+              </div>
+
+            </div>
+
+          </div>
+
+         {/* ============================================================
+    SEARCH & FILTER
+============================================================ */}
+
+<div className="border-b border-slate-200 bg-white px-5 py-5">
+
+  {/* SEARCH */}
+
+  <div className="relative w-full">
+
+    <Search
+      size={19}
+      className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+    />
+
+    <input
+      type="text"
+      value={search}
+      onChange={(e) =>
+        setSearch(e.target.value)
+      }
+      placeholder="Cari request berdasarkan judul atau deskripsi..."
+      className="h-12 w-full rounded-lg border border-slate-300 bg-slate-50 pl-11 pr-4 text-sm text-slate-700 outline-none transition focus:border-[#0B4EA2] focus:bg-white focus:ring-2 focus:ring-blue-100"
+    />
+
+  </div>
+
+  {/* FILTER ROW */}
+
+  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+
+    <div className="flex flex-wrap items-center gap-2">
+
+      <RequestFilter
+        value={status}
+        onChange={setStatus}
+      />
+
+      {(search || status !== "all") && (
+
+        <button
+          type="button"
+          onClick={() => {
+            setSearch("");
+            setStatus("all");
+          }}
+          className="rounded-md px-3 py-2 text-xs font-medium text-[#0B4EA2] transition hover:bg-blue-50"
+        >
+          Reset filter
+        </button>
+
+      )}
+
+    </div>
+
+    <div className="flex items-center gap-3">
+
+      <span className="text-xs text-slate-400">
+        {filteredRequests.length} dari {requests.length} request
+      </span>
+
+      <button
+        type="button"
+        onClick={loadRequests}
+        title="Refresh data"
+        className="flex h-10 w-10 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-500 transition hover:border-[#0B4EA2] hover:bg-blue-50 hover:text-[#0B4EA2]"
+      >
+
+        <RefreshCw
+          size={17}
+          className={
+            loading
+              ? "animate-spin"
+              : ""
+          }
+        />
+
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+          {/* TABLE */}
+
+          <div className="overflow-x-auto">
+
+            <RequestTable
+              loading={loading}
+              requests={filteredRequests}
+              onDetail={(id) =>
+                router.push(
+                  `/dashboard/requests/${id}`
+                )
+              }
+            />
+
+          </div>
+
+        </div>
+
+        {/* ============================================================
             DATA OVERVIEW
         ============================================================ */}
 
@@ -635,144 +773,6 @@ export default function RequestsPage() {
               />
 
             </div>
-
-          </div>
-
-        </div>
-
-        {/* ============================================================
-            REQUEST TABLE AREA
-        ============================================================ */}
-
-        <div className="rounded-lg border border-slate-200 bg-white">
-
-          {/* HEADER */}
-
-          <div className="border-b border-slate-200 px-5 py-4">
-
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-
-              <div>
-
-                <h2 className="text-base font-semibold text-slate-900">
-                  Daftar Request
-                </h2>
-
-                <p className="mt-1 text-xs text-slate-500">
-                  Menampilkan request sesuai filter yang dipilih.
-                </p>
-
-              </div>
-
-              <div className="text-xs text-slate-400">
-
-                {filteredRequests.length} dari{" "}
-                {requests.length} request
-
-              </div>
-
-            </div>
-
-          </div>
-
-         {/* ============================================================
-    SEARCH & FILTER
-============================================================ */}
-
-<div className="border-b border-slate-200 bg-white px-5 py-5">
-
-  {/* SEARCH */}
-
-  <div className="relative w-full">
-
-    <Search
-      size={19}
-      className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-    />
-
-    <input
-      type="text"
-      value={search}
-      onChange={(e) =>
-        setSearch(e.target.value)
-      }
-      placeholder="Cari request berdasarkan judul atau deskripsi..."
-      className="h-12 w-full rounded-lg border border-slate-300 bg-slate-50 pl-11 pr-4 text-sm text-slate-700 outline-none transition focus:border-[#0B4EA2] focus:bg-white focus:ring-2 focus:ring-blue-100"
-    />
-
-  </div>
-
-  {/* FILTER ROW */}
-
-  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-
-    <div className="flex flex-wrap items-center gap-2">
-
-      <RequestFilter
-        value={status}
-        onChange={setStatus}
-      />
-
-      {(search || status !== "all") && (
-
-        <button
-          type="button"
-          onClick={() => {
-            setSearch("");
-            setStatus("all");
-          }}
-          className="rounded-md px-3 py-2 text-xs font-medium text-[#0B4EA2] transition hover:bg-blue-50"
-        >
-          Reset filter
-        </button>
-
-      )}
-
-    </div>
-
-    <div className="flex items-center gap-3">
-
-      <span className="text-xs text-slate-400">
-        {filteredRequests.length} dari {requests.length} request
-      </span>
-
-      <button
-        type="button"
-        onClick={loadRequests}
-        title="Refresh data"
-        className="flex h-10 w-10 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-500 transition hover:border-[#0B4EA2] hover:bg-blue-50 hover:text-[#0B4EA2]"
-      >
-
-        <RefreshCw
-          size={17}
-          className={
-            loading
-              ? "animate-spin"
-              : ""
-          }
-        />
-
-      </button>
-
-    </div>
-
-  </div>
-
-</div>
-
-          {/* TABLE */}
-
-          <div className="overflow-x-auto">
-
-            <RequestTable
-              loading={loading}
-              requests={filteredRequests}
-              onDetail={(id) =>
-                router.push(
-                  `/dashboard/requests/${id}`
-                )
-              }
-            />
 
           </div>
 
