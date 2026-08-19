@@ -358,11 +358,14 @@ export default function LoginForm() {
           ?.status
       );
 
-      console.log(
-        "[LOGIN] SERVER RESPONSE:",
-        axiosError.response
-          ?.data
-      );
+     console.log(
+  "[LOGIN] SERVER RESPONSE:",
+  JSON.stringify(
+    axiosError.response?.data,
+    null,
+    2
+  )
+);
 
       console.log(
         "[LOGIN] REQUEST:",

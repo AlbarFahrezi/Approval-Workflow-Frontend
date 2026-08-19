@@ -8,6 +8,67 @@ import type {
 
 /*
 |--------------------------------------------------------------------------
+| STORAGE KEYS
+|--------------------------------------------------------------------------
+*/
+
+const TOKEN_KEY = "approval_token";
+const USER_KEY = "approval_user";
+const REMEMBER_KEY = "approval_remember_me";
+
+/*
+|--------------------------------------------------------------------------
+| HELPERS
+|--------------------------------------------------------------------------
+*/
+
+function isBrowser(): boolean {
+  return typeof window !== "undefined";
+}
+
+function getStorage(): Storage | null {
+  if (!isBrowser()) {
+    return null;
+  }
+
+  const rememberMe =
+    localStorage.getItem(REMEMBER_KEY) === "true";
+
+  return rememberMe
+    ? localStorage
+    : sessionStorage;
+}
+
+function clearAuthStorage(): void {
+  if (!isBrowser()) {
+    return;
+  }
+
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+  localStorage.removeItem(REMEMBER_KEY);
+
+  sessionStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(USER_KEY);
+  sessionStorage.removeItem(REMEMBER_KEY);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Bersihkan key lama
+  |--------------------------------------------------------------------------
+  */
+
+  localStorage.removeItem("token");
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("auth_token");
+
+  sessionStorage.removeItem("token");
+  sessionStorage.removeItem("access_token");
+  sessionStorage.removeItem("auth_token");
+}
+
+/*
+|--------------------------------------------------------------------------
 | LOGIN
 |--------------------------------------------------------------------------
 */
@@ -15,38 +76,29 @@ import type {
 export async function login(
   payload: LoginPayload
 ): Promise<LoginResponse> {
-  console.log("========== LOGIN START ==========");
-  console.log("[LOGIN] Email:", payload.email);
-
   try {
     /*
     |--------------------------------------------------------------------------
-    | REQUEST LOGIN
+    | Pastikan session lama dibersihkan sebelum login baru
     |--------------------------------------------------------------------------
     */
 
-    const response = await api.post<LoginResponse>(
-      "/login",
-      payload
-    );
+    clearAuthStorage();
 
-    console.log(
-      "[LOGIN] HTTP STATUS:",
-      response.status
-    );
+    const response =
+      await api.post<LoginResponse>(
+        "/login",
+        payload
+      );
 
-    console.log(
-      "[LOGIN] RESPONSE:",
-      response.data
-    );
+    const responseData: any =
+      response.data;
 
     /*
     |--------------------------------------------------------------------------
-    | RESPONSE DATA
+    | Normalisasi response
     |--------------------------------------------------------------------------
     */
-
-    const responseData: any = response.data;
 
     const data =
       responseData?.data ??
@@ -54,7 +106,7 @@ export async function login(
 
     /*
     |--------------------------------------------------------------------------
-    | TOKEN
+    | Ambil token
     |--------------------------------------------------------------------------
     */
 
@@ -67,7 +119,7 @@ export async function login(
 
     /*
     |--------------------------------------------------------------------------
-    | USER
+    | Ambil user
     |--------------------------------------------------------------------------
     */
 
@@ -76,32 +128,13 @@ export async function login(
       responseData?.user ??
       null;
 
-    console.log(
-      "[LOGIN] TOKEN:",
-      token ? "DITEMUKAN" : "TIDAK DITEMUKAN"
-    );
-
-    console.log(
-      "[LOGIN] USER:",
-      user
-    );
-
     /*
     |--------------------------------------------------------------------------
-    | VALIDATE TOKEN
+    | Validasi token
     |--------------------------------------------------------------------------
     */
 
     if (!token) {
-      console.error(
-        "[LOGIN] ❌ TOKEN TIDAK DITEMUKAN"
-      );
-
-      console.error(
-        "[LOGIN] RESPONSE LENGKAP:",
-        responseData
-      );
-
       throw new Error(
         "Login berhasil tetapi token tidak ditemukan dari server."
       );
@@ -109,93 +142,44 @@ export async function login(
 
     /*
     |--------------------------------------------------------------------------
-    | SIMPAN SESSION
+    | Simpan default ke localStorage
     |--------------------------------------------------------------------------
+    |
+    | LoginForm akan mengatur storage berdasarkan Remember Me.
+    | Fungsi ini hanya memastikan login service tetap kompatibel
+    | apabila dipanggil langsung.
+    |
     */
 
-    if (typeof window !== "undefined") {
-      console.log(
-        "[LOGIN] Menyimpan token..."
-      );
+    if (isBrowser()) {
+      const storage = localStorage;
 
-      localStorage.setItem(
-        "approval_token",
+      storage.setItem(
+        TOKEN_KEY,
         String(token)
       );
 
       if (user) {
-        localStorage.setItem(
-          "approval_user",
+        storage.setItem(
+          USER_KEY,
           JSON.stringify(user)
         );
       }
 
-      /*
-      |--------------------------------------------------------------------------
-      | VERIFY LOCAL STORAGE
-      |--------------------------------------------------------------------------
-      */
-
-      const savedToken =
-        localStorage.getItem(
-          "approval_token"
-        );
-
-      const savedUser =
-        localStorage.getItem(
-          "approval_user"
-        );
-
-      console.log(
-        "[LOGIN] ================================"
+      storage.setItem(
+        REMEMBER_KEY,
+        "true"
       );
-
-      console.log(
-        "[LOGIN] TOKEN STORAGE:",
-        savedToken ? "ADA" : "TIDAK ADA"
-      );
-
-      console.log(
-        "[LOGIN] USER STORAGE:",
-        savedUser ? "ADA" : "TIDAK ADA"
-      );
-
-      console.log(
-        "[LOGIN] TOKEN LENGTH:",
-        savedToken?.length ?? 0
-      );
-
-      console.log(
-        "[LOGIN] ================================"
-      );
-
-      /*
-      |--------------------------------------------------------------------------
-      | VALIDATE STORAGE
-      |--------------------------------------------------------------------------
-      */
-
-      if (!savedToken) {
-        throw new Error(
-          "Token gagal disimpan ke localStorage."
-        );
-      }
     }
-
-    console.log(
-      "========== LOGIN SUCCESS =========="
-    );
 
     return response.data;
   } catch (error) {
-    console.error(
-      "========== LOGIN SERVICE ERROR =========="
-    );
-
-    console.error(
-      "[LOGIN] ERROR:",
-      error
-    );
+    /*
+    |--------------------------------------------------------------------------
+    | Jangan manipulasi storage di sini.
+    | Error akan diteruskan ke LoginForm.
+    |--------------------------------------------------------------------------
+    */
 
     throw error;
   }
@@ -211,30 +195,20 @@ export async function logout(): Promise<void> {
   try {
     await api.post("/logout");
   } catch (error) {
+    /*
+    |--------------------------------------------------------------------------
+    | Logout lokal tetap dilakukan walaupun backend gagal.
+    |--------------------------------------------------------------------------
+    */
+
     console.warn(
       "[AUTH] Logout API gagal:",
       error
     );
   } finally {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(
-        "approval_token"
-      );
+    clearAuthStorage();
 
-      localStorage.removeItem(
-        "approval_user"
-      );
-
-      /*
-      |--------------------------------------------------------------------------
-      | Bersihkan token lama jika masih ada
-      |--------------------------------------------------------------------------
-      */
-
-      localStorage.removeItem("token");
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("auth_token");
-
+    if (isBrowser()) {
       window.location.href = "/login";
     }
   }
@@ -247,35 +221,73 @@ export async function logout(): Promise<void> {
 */
 
 export function getStoredUser(): User | null {
-  if (typeof window === "undefined") {
+  if (!isBrowser()) {
     return null;
   }
 
-  const storedUser =
-    localStorage.getItem(
-      "approval_user"
-    );
+  /*
+  |--------------------------------------------------------------------------
+  | Coba storage aktif terlebih dahulu
+  |--------------------------------------------------------------------------
+  */
 
-  if (!storedUser) {
-    return null;
+  const activeStorage =
+    getStorage();
+
+  const activeUser =
+    activeStorage?.getItem(USER_KEY);
+
+  if (activeUser) {
+    try {
+      return JSON.parse(
+        activeUser
+      ) as User;
+    } catch {
+      activeStorage?.removeItem(
+        USER_KEY
+      );
+    }
   }
 
-  try {
-    return JSON.parse(
-      storedUser
-    ) as User;
-  } catch (error) {
-    console.error(
-      "[AUTH] Gagal membaca approval_user:",
-      error
-    );
+  /*
+  |--------------------------------------------------------------------------
+  | Fallback
+  |--------------------------------------------------------------------------
+  */
 
-    localStorage.removeItem(
-      "approval_user"
-    );
+  const localUser =
+    localStorage.getItem(USER_KEY);
 
-    return null;
+  if (localUser) {
+    try {
+      return JSON.parse(
+        localUser
+      ) as User;
+    } catch {
+      localStorage.removeItem(
+        USER_KEY
+      );
+    }
   }
+
+  const sessionUser =
+    sessionStorage.getItem(
+      USER_KEY
+    );
+
+  if (sessionUser) {
+    try {
+      return JSON.parse(
+        sessionUser
+      ) as User;
+    } catch {
+      sessionStorage.removeItem(
+        USER_KEY
+      );
+    }
+  }
+
+  return null;
 }
 
 /*
@@ -285,13 +297,59 @@ export function getStoredUser(): User | null {
 */
 
 export function getStoredToken(): string | null {
-  if (typeof window === "undefined") {
+  if (!isBrowser()) {
     return null;
   }
 
-  return localStorage.getItem(
-    "approval_token"
-  );
+  /*
+  |--------------------------------------------------------------------------
+  | Active storage
+  |--------------------------------------------------------------------------
+  */
+
+  const activeStorage =
+    getStorage();
+
+  const activeToken =
+    activeStorage?.getItem(
+      TOKEN_KEY
+    );
+
+  if (activeToken) {
+    return activeToken;
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Fallback localStorage
+  |--------------------------------------------------------------------------
+  */
+
+  const localToken =
+    localStorage.getItem(
+      TOKEN_KEY
+    );
+
+  if (localToken) {
+    return localToken;
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Fallback sessionStorage
+  |--------------------------------------------------------------------------
+  */
+
+  const sessionToken =
+    sessionStorage.getItem(
+      TOKEN_KEY
+    );
+
+  if (sessionToken) {
+    return sessionToken;
+  }
+
+  return null;
 }
 
 /*
@@ -301,14 +359,33 @@ export function getStoredToken(): string | null {
 */
 
 export function isAuthenticated(): boolean {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  const token =
-    localStorage.getItem(
-      "approval_token"
-    );
-
-  return Boolean(token);
+  return Boolean(
+    getStoredToken()
+  );
 }
+
+/*
+|--------------------------------------------------------------------------
+| GET AUTH STORAGE
+|--------------------------------------------------------------------------
+*/
+
+export function getAuthStorage(): Storage | null {
+  return getStorage();
+}
+
+/*
+|--------------------------------------------------------------------------
+| GET AUTH USER ROLE
+|--------------------------------------------------------------------------
+*/
+
+export function getStoredUserRole():
+  | User["role"]
+  | null {
+  const user =
+    getStoredUser();
+
+  return user?.role ?? null;
+}
+

@@ -1,8 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
+
 import { useRouter } from "next/navigation";
+
 import { RefreshCw } from "lucide-react";
+
 import { toast } from "sonner";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -31,11 +38,21 @@ import ActivityTimeline from "@/components/dashboard/ActivityTimeline";
 import RecentRequests from "@/components/dashboard/RecentRequests";
 import QuickAction from "@/components/dashboard/QuickAction";
 import PendingApproval from "@/components/dashboard/PendingApproval";
+import StatusDistribution from "@/components/dashboard/StatusDistribution";
 
 export default function DashboardPage() {
   const router = useRouter();
 
-  const { user, loading: authLoading } = useAuth();
+  const {
+    user,
+    loading: authLoading,
+  } = useAuth();
+
+  /*
+  |--------------------------------------------------------------------------
+  | STATE
+  |--------------------------------------------------------------------------
+  */
 
   const [summary, setSummary] =
     useState<DashboardSummary | null>(null);
@@ -55,52 +72,117 @@ export default function DashboardPage() {
   const [search, setSearch] =
     useState("");
 
-  const pendingCount = approvalRequests.filter(
-    (item) => item.status === "submitted"
-  ).length;
+  /*
+  |--------------------------------------------------------------------------
+  | PENDING APPROVAL COUNT
+  |--------------------------------------------------------------------------
+  */
 
-  const loadDashboard = useCallback(async () => {
-    try {
-      setLoading(true);
+  const pendingCount =
+    approvalRequests.filter(
+      (item) =>
+        item.status === "submitted"
+    ).length;
 
-      const [
-        dashboardSummary,
-        approvalRequestsData,
-      ] = await Promise.all([
-        getDashboardSummary(),
-        getApprovalRequests(),
-      ]);
+  /*
+  |--------------------------------------------------------------------------
+  | LOAD DASHBOARD
+  |--------------------------------------------------------------------------
+  */
 
-      setSummary(dashboardSummary);
-      setApprovalRequests(approvalRequestsData);
+  const loadDashboard =
+    useCallback(async () => {
+      try {
+        setLoading(true);
 
-      setRecentRequests(
-        [...approvalRequestsData]
-          .sort(
+        const [
+          dashboardSummary,
+          approvalRequestsData,
+        ] = await Promise.all([
+          getDashboardSummary(),
+          getApprovalRequests(),
+        ]);
+
+        /*
+        |----------------------------------------------------------------------
+        | SUMMARY
+        |----------------------------------------------------------------------
+        */
+
+        setSummary(
+          dashboardSummary
+        );
+
+        /*
+        |----------------------------------------------------------------------
+        | ALL REQUESTS
+        |----------------------------------------------------------------------
+        */
+
+        setApprovalRequests(
+          approvalRequestsData
+        );
+
+        /*
+        |----------------------------------------------------------------------
+        | RECENT REQUESTS
+        |----------------------------------------------------------------------
+        */
+
+        const sortedRequests =
+          [...approvalRequestsData].sort(
             (a, b) =>
-              new Date(b.created_at).getTime() -
-              new Date(a.created_at).getTime()
-          )
-          .slice(0, 5)
-      );
-    } catch (error) {
-      console.error(error);
+              new Date(
+                b.created_at
+              ).getTime() -
+              new Date(
+                a.created_at
+              ).getTime()
+          );
 
-      toast.error(
-        "Gagal mengambil data dashboard."
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        setRecentRequests(
+          sortedRequests.slice(0, 5)
+        );
+      } catch (error) {
+        console.error(
+          "[DASHBOARD] Gagal mengambil data:",
+          error
+        );
+
+        toast.error(
+          "Gagal mengambil data dashboard."
+        );
+      } finally {
+        setLoading(false);
+      }
+    }, []);
+
+  /*
+  |--------------------------------------------------------------------------
+  | LOAD DATA AFTER AUTH READY
+  |--------------------------------------------------------------------------
+  */
 
   useEffect(() => {
-    if (!authLoading && user) {
+    if (
+      !authLoading &&
+      user
+    ) {
       queueMicrotask(() => {
         void loadDashboard();
       });
     }
-  }, [authLoading, user, loadDashboard]);
+  }, [
+    authLoading,
+    user,
+    loadDashboard,
+  ]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | AUTH LOADING
+  |--------------------------------------------------------------------------
+  */
 
   if (authLoading) {
     return (
@@ -110,49 +192,140 @@ export default function DashboardPage() {
             size={18}
             className="animate-spin"
           />
+
           Memuat Dashboard...
         </div>
       </div>
     );
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | USER NOT FOUND
+  |--------------------------------------------------------------------------
+  */
+
   if (!user) {
     return null;
   }
 
-  const keyword = search.trim().toLowerCase();
+  /*
+  |--------------------------------------------------------------------------
+  | SEARCH
+  |--------------------------------------------------------------------------
+  */
 
-  const filteredRequests = keyword
-    ? approvalRequests.filter((request) => {
-        return (
-          request.title
-            ?.toLowerCase()
-            .includes(keyword) ||
-          request.description
-            ?.toLowerCase()
-            .includes(keyword) ||
-          request.status
-            ?.toLowerCase()
-            .includes(keyword)
+  const keyword =
+    search
+      .trim()
+      .toLowerCase();
+
+  /*
+  |--------------------------------------------------------------------------
+  | FILTER RECENT REQUESTS
+  |--------------------------------------------------------------------------
+  |
+  | Kalau user melakukan pencarian:
+  | tampilkan request berdasarkan keyword.
+  |
+  | Kalau tidak ada pencarian:
+  | tampilkan 5 request terbaru.
+  |
+  */
+
+  const filteredRequests =
+    keyword
+      ? approvalRequests.filter(
+          (request) =>
+            request.title
+              ?.toLowerCase()
+              .includes(
+                keyword
+              ) ||
+            request.description
+              ?.toLowerCase()
+              .includes(
+                keyword
+              ) ||
+            request.status
+              ?.toLowerCase()
+              .includes(
+                keyword
+              )
+        )
+      : recentRequests;
+
+  /*
+  |--------------------------------------------------------------------------
+  | STATUS FILTER
+  |--------------------------------------------------------------------------
+  |
+  | Digunakan oleh SummaryCards.
+  |
+  | all       -> semua request
+  | draft     -> request draft
+  | submitted -> request disubmit
+  | approved  -> request disetujui
+  | rejected  -> request ditolak
+  |
+  */
+
+  const handleStatusFilter =
+    (
+      status:
+        | "all"
+        | "draft"
+        | "submitted"
+        | "approved"
+        | "rejected"
+    ) => {
+      if (status === "all") {
+        router.push(
+          "/dashboard/requests"
         );
-      })
-    : recentRequests;
+
+        return;
+      }
+
+      router.push(
+        `/dashboard/requests?status=${status}`
+      );
+    };
+
+  /*
+  |--------------------------------------------------------------------------
+  | RENDER
+  |--------------------------------------------------------------------------
+  */
 
   return (
     <div className="min-h-screen bg-[#f4f7fa]">
 
-      {/* Sidebar */}
+      {/* ================================================================ */}
+      {/* SIDEBAR */}
+      {/* ================================================================ */}
+
       <Sidebar
         user={user}
         open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        pendingCount={pendingCount}
+        onClose={() =>
+          setSidebarOpen(false)
+        }
+        pendingCount={
+          pendingCount
+        }
       />
 
-      {/* Main Content */}
+      {/* ================================================================ */}
+      {/* MAIN CONTENT */}
+      {/* ================================================================ */}
+
       <div className="lg:pl-72">
 
-        {/* Header */}
+        {/* ============================================================ */}
+        {/* HEADER */}
+        {/* ============================================================ */}
+
         <Header
           user={user}
           search={search}
@@ -160,50 +333,109 @@ export default function DashboardPage() {
           onOpenSidebar={() =>
             setSidebarOpen(true)
           }
-          approvalRequests={approvalRequests}
+          approvalRequests={
+            approvalRequests
+          }
         />
 
-        {/* Dashboard Content */}
+        {/* ============================================================ */}
+        {/* DASHBOARD CONTENT */}
+        {/* ============================================================ */}
+
         <main className="space-y-7 pt-6 pr-6 pb-8 pl-0 lg:pt-8 lg:pr-8 lg:pb-8 lg:pl-0">
 
-          {/* Summary Cards */}
+          {/* ======================================================== */}
+          {/* SUMMARY CARDS */}
+          {/* ======================================================== */}
+
           <SummaryCards
             summary={summary}
             role={user.role}
+            onFilter={
+              handleStatusFilter
+            }
           />
 
-          {/* Pending Approval khusus Manager */}
+          {/* ======================================================== */}
+          {/* PENDING APPROVAL - MANAGER */}
+          {/* ======================================================== */}
+
           {user.role === "manager" && (
             <PendingApproval
               requests={approvalRequests.filter(
                 (request) =>
-                  request.status === "submitted"
+                  request.status ===
+                  "submitted"
               )}
             />
           )}
 
-          {/* Statistics + Activity */}
+          {/* ======================================================== */}
+          {/* RECENT REQUESTS + ACTIVITY */}
+          {/* ======================================================== */}
+
           <section className="grid gap-6 xl:grid-cols-[2fr_1fr]">
-            <StatisticsChart />
+
+            {/* ------------------------------------------------------ */}
+            {/* DAFTAR REQUEST */}
+            {/* ------------------------------------------------------ */}
+
+            <RecentRequests
+              loading={loading}
+              requests={
+                filteredRequests
+              }
+              onRefresh={
+                loadDashboard
+              }
+              onViewAll={() =>
+                router.push(
+                  "/dashboard/requests"
+                )
+              }
+              onDetail={(id) =>
+                router.push(
+                  `/dashboard/requests/${id}`
+                )
+              }
+            />
+
+            {/* ------------------------------------------------------ */}
+            {/* AKTIVITAS HARI INI */}
+            {/* ------------------------------------------------------ */}
+
             <ActivityTimeline />
+
           </section>
 
-          {/* Recent Requests */}
-          <RecentRequests
-            loading={loading}
-            requests={filteredRequests}
-            onRefresh={loadDashboard}
-            onViewAll={() =>
-              router.push("/dashboard/requests")
-            }
-            onDetail={(id) =>
-              router.push(
-                `/dashboard/requests/${id}`
-              )
-            }
-          />
+          {/* ======================================================== */}
+          {/* STATISTICS + STATUS DISTRIBUTION */}
+          {/* ======================================================== */}
 
-          {/* Quick Action */}
+          <section className="grid gap-6 xl:grid-cols-[2fr_1fr]">
+
+            {/* ------------------------------------------------------ */}
+            {/* APPROVAL STATISTICS */}
+            {/* ------------------------------------------------------ */}
+
+            <StatisticsChart />
+
+            {/* ------------------------------------------------------ */}
+            {/* STATUS DISTRIBUTION */}
+            {/* ------------------------------------------------------ */}
+
+            <StatusDistribution
+              requests={
+                approvalRequests
+              }
+            />
+
+          </section>
+
+          {/* ======================================================== */}
+          {/* QUICK ACTION */}
+          {/* ======================================================== */}
+
           <QuickAction
             onCreate={() =>
               router.push(
@@ -218,7 +450,9 @@ export default function DashboardPage() {
           />
 
         </main>
+
       </div>
+
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, } from "next/navigation";
 
 import {
   Search,
@@ -28,6 +28,8 @@ import RequestTable from "@/components/dashboard/requests/RequestTable";
 export default function RequestsPage() {
   const router = useRouter();
 
+  const searchParams = useSearchParams();
+
   const [loading, setLoading] = useState(true);
 
   const [requests, setRequests] = useState<
@@ -37,6 +39,30 @@ export default function RequestsPage() {
   const [search, setSearch] = useState("");
 
   const [status, setStatus] = useState("all");
+
+  useEffect(() => {
+  const statusFromUrl =
+    searchParams.get("status");
+
+  const allowedStatuses = [
+    "all",
+    "draft",
+    "submitted",
+    "approved",
+    "rejected",
+  ];
+
+  if (
+    statusFromUrl &&
+    allowedStatuses.includes(
+      statusFromUrl
+    )
+  ) {
+    setStatus(statusFromUrl);
+  } else {
+    setStatus("all");
+  }
+}, [searchParams]);
 
   /*
   |--------------------------------------------------------------------------

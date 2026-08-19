@@ -1,5 +1,11 @@
 import axios from "axios";
 
+/*
+|--------------------------------------------------------------------------
+| AXIOS INSTANCE
+|--------------------------------------------------------------------------
+*/
+
 const api = axios.create({
   baseURL: "http://127.0.0.1:8000/api",
   headers: {
@@ -10,60 +16,119 @@ const api = axios.create({
 
 /*
 |--------------------------------------------------------------------------
+| STORAGE KEY
+|--------------------------------------------------------------------------
+*/
+
+const TOKEN_KEY = "approval_token";
+
+/*
+|--------------------------------------------------------------------------
+| GET AUTH TOKEN
+|--------------------------------------------------------------------------
+| Prioritas:
+| 1. localStorage
+| 2. sessionStorage
+|--------------------------------------------------------------------------
+*/
+
+function getAuthToken(): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const localToken =
+    window.localStorage.getItem(TOKEN_KEY);
+
+  if (localToken) {
+    return localToken;
+  }
+
+  const sessionToken =
+    window.sessionStorage.getItem(TOKEN_KEY);
+
+  return sessionToken;
+}
+
+/*
+|--------------------------------------------------------------------------
 | REQUEST INTERCEPTOR
 |--------------------------------------------------------------------------
-| Selalu ambil token TERBARU dari localStorage setiap request.
 */
 
 api.interceptors.request.use(
   (config) => {
-    if (typeof window !== "undefined") {
-      const token = localStorage.getItem("approval_token");
+    if (typeof window === "undefined") {
+      return config;
+    }
 
-      console.log(
-        "[AXIOS] ================================"
-      );
+    const url = config.url ?? "";
 
-      console.log(
-        "[AXIOS] REQUEST:",
-        config.method?.toUpperCase(),
-        config.url
-      );
+    const isLoginRequest =
+      url === "/login" ||
+      url.endsWith("/login");
 
-      console.log(
-        "[AXIOS] TOKEN:",
-        token ? "ADA" : "TIDAK ADA"
-      );
+    /*
+    |--------------------------------------------------------------------------
+    | LOGIN REQUEST
+    |--------------------------------------------------------------------------
+    | /login adalah endpoint public.
+    | Jangan kirim token lama.
+    |--------------------------------------------------------------------------
+    */
 
-      /*
-      |--------------------------------------------------------------------------
-      | Authorization
-      |--------------------------------------------------------------------------
-      */
-
-      if (token) {
-        config.headers = config.headers ?? {};
-
-        config.headers.Authorization =
-          `Bearer ${token}`;
-
-        console.log(
-          "[AXIOS] Authorization: Bearer [TOKEN ADA]"
-        );
-      } else {
-        console.warn(
-          "[AXIOS] ⚠️ TOKEN TIDAK DITEMUKAN"
-        );
+    if (isLoginRequest) {
+      if (config.headers) {
+        delete config.headers.Authorization;
       }
 
       console.log(
-        "[AXIOS] ================================"
+        "[AXIOS] LOGIN:",
+        config.method?.toUpperCase(),
+        url
+      );
+
+      return config;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | PROTECTED REQUEST
+    |--------------------------------------------------------------------------
+    */
+
+    const token =
+      getAuthToken();
+
+    if (token) {
+      config.headers =
+        config.headers ?? {};
+
+      config.headers.Authorization =
+        `Bearer ${token}`;
+
+      console.log(
+        "[AXIOS] AUTH:",
+        config.method?.toUpperCase(),
+        url,
+        "| Bearer token dikirim"
+      );
+    } else {
+      console.warn(
+        "[AXIOS] ⚠️ Token tidak ditemukan:",
+        url
       );
     }
 
     return config;
   },
+
   (error) => {
+    console.error(
+      "[AXIOS] Request interceptor error:",
+      error
+    );
+
     return Promise.reject(error);
   }
 );
@@ -76,47 +141,155 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => {
+    console.log(
+      "[AXIOS] RESPONSE:",
+      response.status,
+      response.config.url
+    );
+
     return response;
   },
-  (error) => {
-    const status = error.response?.status;
 
-    console.error(
-      "[AXIOS] RESPONSE ERROR:",
-      status,
-      error.config?.url
-    );
+  (error) => {
+    const status =
+      error.response?.status;
+
+    const url =
+      error.config?.url;
 
     /*
     |--------------------------------------------------------------------------
-    | 401
+    | LOGIN 401
     |--------------------------------------------------------------------------
-    | Jangan langsung hapus token untuk semua 401.
-    | Kita perlu melihat dulu apakah token memang invalid.
+    | Jangan dianggap token expired.
+    | /login memang bisa 401 karena credential salah.
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      status === 401 &&
+      (url === "/login" ||
+        url?.endsWith("/login"))
+    ) {
+      console.warn(
+        "[AXIOS] Login ditolak: email/password tidak valid."
+      );
+
+      return Promise.reject(error);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | OTHER 401
+    |--------------------------------------------------------------------------
     */
 
     if (status === 401) {
       console.warn(
-        "[AXIOS] 401 Unauthorized"
+        "[AXIOS] ⚠️ 401 Unauthorized:",
+        url
       );
 
       if (typeof window !== "undefined") {
-        const token =
-          localStorage.getItem("approval_token");
+        const localToken =
+          window.localStorage.getItem(
+            TOKEN_KEY
+          );
+
+        const sessionToken =
+          window.sessionStorage.getItem(
+            TOKEN_KEY
+          );
 
         console.warn(
-          "[AXIOS] Token saat menerima 401:",
-          token ? "MASIH ADA" : "SUDAH TIDAK ADA"
+          "[AXIOS] localStorage token:",
+          localToken
+            ? "ADA"
+            : "TIDAK ADA"
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Jangan hapus token otomatis dulu.
-        |--------------------------------------------------------------------------
-        | Ini penting untuk debugging supaya token tidak hilang
-        | gara-gara satu request gagal.
-        */
+        console.warn(
+          "[AXIOS] sessionStorage token:",
+          sessionToken
+            ? "ADA"
+            : "TIDAK ADA"
+        );
       }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 403 FORBIDDEN
+    |--------------------------------------------------------------------------
+    */
+
+    if (status === 403) {
+      console.warn(
+        "[AXIOS] ⚠️ 403 Forbidden:",
+        url
+      );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 404 NOT FOUND
+    |--------------------------------------------------------------------------
+    */
+
+    if (status === 404) {
+      console.warn(
+        "[AXIOS] ⚠️ 404 Endpoint tidak ditemukan:",
+        url
+      );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 422 VALIDATION ERROR
+    |--------------------------------------------------------------------------
+    */
+
+    if (status === 422) {
+      console.warn(
+        "[AXIOS] ⚠️ 422 Validation Error:",
+        url
+      );
+
+      if (error.response?.data) {
+        console.warn(
+          "[AXIOS] Validation:",
+          error.response.data
+        );
+      }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 500 SERVER ERROR
+    |--------------------------------------------------------------------------
+    */
+
+    if (status === 500) {
+      console.error(
+        "[AXIOS] ❌ 500 Internal Server Error:",
+        url
+      );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | NETWORK ERROR
+    |--------------------------------------------------------------------------
+    */
+
+    if (!error.response) {
+      console.error(
+        "[AXIOS] ❌ Tidak ada response dari server."
+      );
+
+      console.error(
+        "[AXIOS] Pastikan Laravel sedang berjalan."
+      );
     }
 
     return Promise.reject(error);
