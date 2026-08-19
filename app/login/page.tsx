@@ -70,7 +70,7 @@ export default function LoginPage() {
             className="absolute inset-[-14px] transition-transform duration-700 ease-out"
           >
             <Image
-              src="/dahana-login-bg 2.jpg"
+              src="/dahana-login-bg 2.jpeg"
               alt="PT DAHANA"
               fill
               priority
