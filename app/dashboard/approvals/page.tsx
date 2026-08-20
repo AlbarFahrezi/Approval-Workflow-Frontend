@@ -1,38 +1,77 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import { useRouter } from "next/navigation";
+
 import {
   Loader2,
-  RefreshCw,
-  CheckCircle,
-  XCircle,
-  Eye,
+  Search,
 } from "lucide-react";
+
 import { toast } from "sonner";
 
 import {
   getApprovalRequests,
 } from "@/services/approvalRequest";
 
-import type { ApprovalRequest } from "@/types/approvalRequest";
+import type {
+  ApprovalRequest,
+} from "@/types/approvalRequest";
+
+import ApprovalHero from "@/components/dashboard/approvals/ApprovalHero";
+
+import ApprovalMetrics from "@/components/dashboard/approvals/ApprovalMetrics";
+
+import ApprovalQueue from "@/components/dashboard/approvals/ApprovalQueue";
+
+import ApprovalInsight from "@/components/dashboard/approvals/ApprovalInsight";
+
+import ApprovalEmptyState from "@/components/dashboard/approvals/ApprovalEmptyState";
 
 export default function ApprovalsPage() {
   const router = useRouter();
 
-  const [loading, setLoading] = useState(true);
-  const [requests, setRequests] = useState<ApprovalRequest[]>([]);
+  const [loading, setLoading] =
+    useState(true);
+
+  const [requests, setRequests] =
+    useState<ApprovalRequest[]>([]);
+
+  const [search, setSearch] =
+    useState("");
 
   async function loadData() {
     try {
       setLoading(true);
 
-      const data = await getApprovalRequests();
+      const data =
+        await getApprovalRequests();
+
+      const pendingRequests =
+        data
+          .filter(
+            (item) =>
+              item.status === "submitted"
+          )
+          .sort(
+            (a, b) =>
+              new Date(
+                b.submitted_at ??
+                  b.created_at
+              ).getTime() -
+              new Date(
+                a.submitted_at ??
+                  a.created_at
+              ).getTime()
+          );
 
       setRequests(
-        data.filter(
-          (item) => item.status === "submitted"
-        )
+        pendingRequests
       );
     } catch (error) {
       console.error(error);
@@ -46,155 +85,216 @@ export default function ApprovalsPage() {
   }
 
   useEffect(() => {
-    loadData();
+    void loadData();
   }, []);
 
+  const filteredRequests =
+    useMemo(() => {
+      const keyword =
+        search
+          .trim()
+          .toLowerCase();
+
+      if (!keyword) {
+        return requests;
+      }
+
+      return requests.filter(
+        (item) =>
+          item.title
+            ?.toLowerCase()
+            .includes(keyword) ||
+
+          item.description
+            ?.toLowerCase()
+            .includes(keyword) ||
+
+          item.user?.name
+            ?.toLowerCase()
+            .includes(keyword) ||
+
+          String(item.id)
+            .includes(keyword)
+      );
+    }, [
+      requests,
+      search,
+    ]);
+
+  function handleReview(
+    id: number
+  ) {
+    router.push(
+      `/dashboard/requests/${id}`
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-[1600px] space-y-6 pb-10">
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* HERO */}
 
-        <div>
-          <h1 className="text-3xl font-bold">
-            Approval Request
-          </h1>
+      <ApprovalHero
+        totalPending={
+          requests.length
+        }
+        onRefresh={() =>
+          void loadData()
+        }
+        loading={loading}
+      />
 
-          <p className="mt-1 text-slate-500">
-            Request yang menunggu persetujuan Manager.
-          </p>
-        </div>
+      {/* METRICS */}
 
-        <button
-          onClick={loadData}
-          disabled={loading}
-          className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm hover:bg-slate-100 disabled:opacity-60"
-        >
-          <RefreshCw
-            size={18}
-            className={
-              loading
-                ? "animate-spin"
-                : ""
-            }
-          />
-        </button>
+      <ApprovalMetrics
+        totalPending={
+          requests.length
+        }
+        totalDisplayed={
+          filteredRequests.length
+        }
+      />
 
-      </div>
+      {/* LOADING */}
 
-      {/* Loading */}
       {loading ? (
 
-        <div className="flex h-72 items-center justify-center">
+        <section className="flex min-h-[420px] items-center justify-center border border-slate-300 bg-white">
 
-          <Loader2
-            size={32}
-            className="animate-spin text-[#0B4EA2]"
-          />
+          <div className="flex flex-col items-center gap-4">
 
-        </div>
+            <div className="flex h-16 w-16 items-center justify-center bg-[#EDF4FA]">
 
-      ) : requests.length === 0 ? (
-
-        /* Empty State */
-        <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-sm">
-
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-50">
-
-            <CheckCircle
-              size={30}
-              className="text-green-600"
-            />
-
-          </div>
-
-          <h2 className="text-xl font-semibold">
-            Tidak ada request pending
-          </h2>
-
-          <p className="mt-2 text-sm text-slate-500">
-            Semua request sudah diproses.
-          </p>
-
-        </div>
-
-      ) : (
-
-        /* Approval List */
-        <div className="space-y-4">
-
-          {requests.map((item) => (
-
-            <div
-              key={item.id}
-              className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
-            >
-
-              <div className="flex items-start justify-between gap-6">
-
-                {/* Request Info */}
-                <div className="min-w-0 flex-1">
-
-                  <div className="flex items-center gap-3">
-
-                    <h2 className="text-lg font-bold">
-                      {item.title}
-                    </h2>
-
-                    <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold capitalize text-yellow-700">
-                      {item.status}
-                    </span>
-
-                  </div>
-
-                  <p className="mt-2 text-sm leading-6 text-slate-500">
-                    {item.description}
-                  </p>
-
-                  <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-500">
-
-                    <span>
-                      Dibuat oleh:{" "}
-                      <span className="font-semibold text-slate-700">
-                        {item.user?.name ?? "-"}
-                      </span>
-                    </span>
-
-                    <span>
-                      Request ID:{" "}
-                      <span className="font-semibold text-slate-700">
-                        #{item.id}
-                      </span>
-                    </span>
-
-                  </div>
-
-                </div>
-
-                {/* Action */}
-                <div className="flex shrink-0 items-center gap-2">
-
-                  <button
-                    onClick={() =>
-                      router.push(
-                        `/dashboard/requests/${item.id}`
-                      )
-                    }
-                    className="flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 font-semibold text-slate-700 hover:bg-slate-100"
-                  >
-                    <Eye size={17} />
-                    Detail
-                  </button>
-
-                </div>
-
-              </div>
+              <Loader2
+                size={30}
+                className="animate-spin text-[#1E5A92]"
+              />
 
             </div>
 
-          ))}
+            <div className="text-center">
 
-        </div>
+              <p className="font-bold text-[#1D2D3D]">
+
+                Memuat Approval Queue
+
+              </p>
+
+              <p className="mt-1 text-sm text-slate-500">
+
+                Mengambil request yang
+                membutuhkan keputusan.
+
+              </p>
+
+            </div>
+
+          </div>
+
+        </section>
+
+      ) : requests.length === 0 ? (
+
+        <ApprovalEmptyState
+          hasSearch={false}
+        />
+
+      ) : (
+
+        <section className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_340px]">
+
+          {/* MAIN */}
+
+          <div className="min-w-0">
+
+            <ApprovalQueue
+              requests={
+                filteredRequests
+              }
+              search={search}
+              onSearch={setSearch}
+              onReview={handleReview}
+            />
+
+            {/* EMPTY SEARCH */}
+
+            {filteredRequests.length === 0 && (
+
+              <div className="mt-6">
+
+                <ApprovalEmptyState
+                  hasSearch={true}
+                />
+
+              </div>
+
+            )}
+
+          </div>
+
+          {/* SIDEBAR */}
+
+          <aside className="space-y-6">
+
+            <ApprovalInsight
+              requests={requests}
+            />
+
+            {search.trim() !== "" && (
+
+              <section className="border border-slate-300 bg-white">
+
+                <div className="border-b border-slate-200 bg-[#F7F9FB] px-5 py-4">
+
+                  <div className="flex items-center gap-2">
+
+                    <Search
+                      size={16}
+                      className="text-[#1E5A92]"
+                    />
+
+                    <p className="text-xs font-bold uppercase tracking-wider text-[#36516f]">
+
+                      Hasil Pencarian
+
+                    </p>
+
+                  </div>
+
+                </div>
+
+                <div className="px-5 py-5">
+
+                  <p className="text-4xl font-bold text-[#193b61]">
+
+                    {
+                      filteredRequests.length
+                    }
+
+                  </p>
+
+                  <p className="mt-3 text-sm leading-6 text-slate-500">
+
+                    Request ditemukan berdasarkan
+                    kata kunci:
+
+                  </p>
+
+                  <p className="mt-2 border-l-2 border-[#F5A623] bg-[#FFF8E8] px-3 py-2 text-sm font-bold text-[#8A5700]">
+
+                    "{search}"
+
+                  </p>
+
+                </div>
+
+              </section>
+
+            )}
+
+          </aside>
+
+        </section>
 
       )}
 
