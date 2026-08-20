@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+
 import {
   ArrowLeft,
   User,
@@ -16,7 +17,12 @@ import {
   Loader2,
   X,
   AlertTriangle,
+  CircleDot,
+  History,
+  ShieldCheck,
+  ClipboardList,
 } from "lucide-react";
+
 import { toast } from "sonner";
 
 import {
@@ -28,142 +34,272 @@ import {
   getApprovalTimeline,
   getApprovalHistory,
 } from "@/services/approvalRequest";
+
 import { getStoredUser } from "@/services/auth";
-import type { ApprovalRequest } from "@/types/approvalRequest";
+
+import type {
+  ApprovalRequest,
+} from "@/types/approvalRequest";
 
 export default function RequestDetailPage() {
   const router = useRouter();
-  const params = useParams<{ id: string }>();
 
-  const [loading, setLoading] = useState(true);
-  const [request, setRequest] = useState<ApprovalRequest | null>(null);
-  const [timeline, setTimeline] = useState<any[]>([]);
-  const [history, setHistory] = useState<any[]>([]);
+  const params =
+    useParams<{ id: string }>();
 
-  const [showRejectModal, setShowRejectModal] = useState(false);
-  const [rejectComment, setRejectComment] = useState("");
-  const [rejectLoading, setRejectLoading] = useState(false);
+  const [loading, setLoading] =
+    useState(true);
 
-  const [confirmAction, setConfirmAction] = useState<
-    "submit" | "approve" | "delete" | null
+  const [request, setRequest] =
+    useState<ApprovalRequest | null>(
+      null
+    );
+
+  const [timeline, setTimeline] =
+    useState<any[]>([]);
+
+  const [history, setHistory] =
+    useState<any[]>([]);
+
+  const [
+    showRejectModal,
+    setShowRejectModal,
+  ] = useState(false);
+
+  const [
+    rejectComment,
+    setRejectComment,
+  ] = useState("");
+
+  const [
+    rejectLoading,
+    setRejectLoading,
+  ] = useState(false);
+
+  const [
+    confirmAction,
+    setConfirmAction,
+  ] = useState<
+    "submit" |
+    "approve" |
+    "delete" |
+    null
   >(null);
-  const [confirmLoading, setConfirmLoading] = useState(false);
 
-  const currentUser = getStoredUser();
-  const currentUserRole = String(currentUser?.role ?? "")
-    .trim()
-    .toLowerCase();
+  const [
+    confirmLoading,
+    setConfirmLoading,
+  ] = useState(false);
+
+  const currentUser =
+    getStoredUser();
+
+  const currentUserRole =
+    String(
+      currentUser?.role ?? ""
+    )
+      .trim()
+      .toLowerCase();
 
   useEffect(() => {
     async function loadDetail() {
       try {
         setLoading(true);
 
-        const id = Number(params.id);
-        if (!id) throw new Error("ID request tidak valid.");
+        const id =
+          Number(params.id);
 
-        const [requestData, timelineData, historyData] = await Promise.all([
+        if (!id) {
+          throw new Error(
+            "ID request tidak valid."
+          );
+        }
+
+        const [
+          requestData,
+          timelineData,
+          historyData,
+        ] = await Promise.all([
           getApprovalRequest(id),
           getApprovalTimeline(id),
           getApprovalHistory(id),
         ]);
 
         setRequest(requestData);
+
         setTimeline(timelineData);
+
         setHistory(historyData);
       } catch (error) {
         console.error(error);
-        toast.error("Gagal mengambil detail request.");
+
+        toast.error(
+          "Gagal mengambil detail request."
+        );
       } finally {
         setLoading(false);
       }
     }
 
-    if (params.id) loadDetail();
+    if (params.id) {
+      void loadDetail();
+    }
   }, [params.id]);
 
-  async function refreshRequest(id: number) {
-    const [updatedRequest, updatedTimeline, updatedHistory] =
-      await Promise.all([
-        getApprovalRequest(id),
-        getApprovalTimeline(id),
-        getApprovalHistory(id),
-      ]);
+  async function refreshRequest(
+    id: number
+  ) {
+    const [
+      updatedRequest,
+      updatedTimeline,
+      updatedHistory,
+    ] = await Promise.all([
+      getApprovalRequest(id),
+      getApprovalTimeline(id),
+      getApprovalHistory(id),
+    ]);
 
     setRequest(updatedRequest);
+
     setTimeline(updatedTimeline);
+
     setHistory(updatedHistory);
   }
 
   async function handleDelete() {
-    if (!request) return;
+    if (!request) {
+      return;
+    }
 
     try {
       setConfirmLoading(true);
-      await deleteApprovalRequest(request.id);
-      toast.success("Request berhasil dihapus.");
-      router.push("/dashboard/requests");
+
+      await deleteApprovalRequest(
+        request.id
+      );
+
+      toast.success(
+        "Request berhasil dihapus."
+      );
+
+      router.push(
+        "/dashboard/requests"
+      );
     } catch (error) {
       console.error(error);
-      toast.error("Gagal menghapus request.");
+
+      toast.error(
+        "Gagal menghapus request."
+      );
     } finally {
       setConfirmLoading(false);
+
       setConfirmAction(null);
     }
   }
 
   async function handleSubmit() {
-    if (!request) return;
+    if (!request) {
+      return;
+    }
 
     try {
       setConfirmLoading(true);
-      await submitApprovalRequest(request.id);
-      await refreshRequest(request.id);
-      toast.success("Request berhasil disubmit.");
+
+      await submitApprovalRequest(
+        request.id
+      );
+
+      await refreshRequest(
+        request.id
+      );
+
+      toast.success(
+        "Request berhasil disubmit."
+      );
     } catch (error) {
       console.error(error);
-      toast.error("Gagal submit request.");
+
+      toast.error(
+        "Gagal submit request."
+      );
     } finally {
       setConfirmLoading(false);
+
       setConfirmAction(null);
     }
   }
 
   async function handleApprove() {
-    if (!request) return;
+    if (!request) {
+      return;
+    }
 
     try {
       setConfirmLoading(true);
-      await approveApprovalRequest(request.id);
-      await refreshRequest(request.id);
-      toast.success("Request berhasil diapprove.");
+
+      await approveApprovalRequest(
+        request.id
+      );
+
+      await refreshRequest(
+        request.id
+      );
+
+      toast.success(
+        "Request berhasil diapprove."
+      );
     } catch (error) {
       console.error(error);
-      toast.error("Gagal approve request.");
+
+      toast.error(
+        "Gagal approve request."
+      );
     } finally {
       setConfirmLoading(false);
+
       setConfirmAction(null);
     }
   }
 
   async function handleReject() {
-    if (!request) return;
+    if (!request) {
+      return;
+    }
 
     if (!rejectComment.trim()) {
-      toast.error("Alasan reject wajib diisi.");
+      toast.error(
+        "Alasan reject wajib diisi."
+      );
+
       return;
     }
 
     try {
       setRejectLoading(true);
-      await rejectApprovalRequest(request.id, rejectComment.trim());
-      await refreshRequest(request.id);
+
+      await rejectApprovalRequest(
+        request.id,
+        rejectComment.trim()
+      );
+
+      await refreshRequest(
+        request.id
+      );
+
       setRejectComment("");
+
       setShowRejectModal(false);
-      toast.success("Request berhasil direject.");
+
+      toast.success(
+        "Request berhasil direject."
+      );
     } catch (error) {
       console.error(error);
-      toast.error("Gagal reject request.");
+
+      toast.error(
+        "Gagal reject request."
+      );
     } finally {
       setRejectLoading(false);
     }
@@ -171,660 +307,1452 @@ export default function RequestDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[70vh] items-center justify-center bg-[#f5f7fa] font-sans">
-        <div className="flex items-center gap-3 rounded-xl border border-[#e1e8ef] bg-white px-5 py-4 text-sm text-[#60768a] shadow-sm">
-          <Loader2 size={20} className="animate-spin text-[#0b5eb8]" />
-          Memuat detail request...
+      <div className="flex min-h-[70vh] items-center justify-center">
+
+        <div className="flex flex-col items-center gap-4">
+
+          <div className="flex h-14 w-14 items-center justify-center bg-[#EDF5FF]">
+
+            <Loader2
+              size={28}
+              className="animate-spin text-[#0B4EA2]"
+            />
+
+          </div>
+
+          <div className="text-center">
+
+            <p className="font-bold text-slate-800">
+              Memuat Detail Request
+            </p>
+
+            <p className="mt-1 text-sm text-slate-500">
+              Mengambil informasi request
+              dan approval history.
+            </p>
+
+          </div>
+
         </div>
+
       </div>
     );
   }
 
   if (!request) {
     return (
-      <div className="flex min-h-[70vh] flex-col items-center justify-center bg-[#f5f7fa] font-sans">
-        <div className="rounded-2xl border border-[#dfe7ef] bg-white p-8 text-center shadow-sm">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#eef5fc] text-[#0b5eb8]">
-            <FileText size={22} />
+      <div className="flex min-h-[70vh] items-center justify-center">
+
+        <div className="max-w-md border border-slate-200 bg-white p-8 text-center">
+
+          <div className="mx-auto flex h-14 w-14 items-center justify-center bg-[#EDF5FF] text-[#0B4EA2]">
+
+            <FileText size={25} />
+
           </div>
-          <h2 className="mt-4 text-lg font-bold text-[#17324d]">
-            Data tidak ditemukan
+
+          <h2 className="mt-5 text-xl font-bold text-slate-900">
+            Request Tidak Ditemukan
           </h2>
-          <p className="mt-1 text-sm text-[#718599]">
-            Request yang kamu buka tidak tersedia.
+
+          <p className="mt-2 text-sm leading-6 text-slate-500">
+            Data request yang kamu buka
+            mungkin sudah dihapus atau
+            tidak tersedia.
           </p>
+
           <button
             type="button"
-            onClick={() => router.push("/dashboard/requests")}
-            className="mt-5 rounded-lg bg-[#0b5eb8] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#084b95]"
+            onClick={() =>
+              router.push(
+                "/dashboard/requests"
+              )
+            }
+            className="mt-6 inline-flex h-11 items-center gap-2 bg-[#0B4EA2] px-5 text-sm font-bold text-white transition hover:bg-[#083D82]"
           >
+
+            <ArrowLeft size={17} />
+
             Kembali ke Request
+
           </button>
+
         </div>
+
       </div>
     );
   }
 
-  const normalizedStatus = String(request.status ?? "")
-    .trim()
-    .toLowerCase();
+  const normalizedStatus =
+    String(
+      request.status ?? ""
+    )
+      .trim()
+      .toLowerCase();
 
   const canManageDraft =
-    (currentUserRole === "employee" || currentUserRole === "manager") &&
+    (
+      currentUserRole ===
+        "employee" ||
+      currentUserRole ===
+        "manager"
+    ) &&
     normalizedStatus === "draft";
 
   const canApprove =
-    currentUserRole === "manager" && normalizedStatus === "submitted";
+    currentUserRole ===
+      "manager" &&
+    normalizedStatus ===
+      "submitted";
 
   const statusMeta = {
     draft: {
       label: "Draft",
       icon: <FileText size={15} />,
-      className: "border-[#dbe4ec] bg-[#f3f6f9] text-[#53687c]",
+      badge:
+        "border-slate-300 bg-slate-100 text-slate-600",
     },
+
     submitted: {
-      label: "Submitted",
+      label: "Menunggu Approval",
       icon: <Clock3 size={15} />,
-      className: "border-[#f3df9f] bg-[#fff9e8] text-[#96700d]",
+      badge:
+        "border-amber-200 bg-amber-50 text-amber-700",
     },
+
     approved: {
       label: "Approved",
       icon: <CheckCircle2 size={15} />,
-      className: "border-[#bde4cd] bg-[#eefaf3] text-[#197342]",
+      badge:
+        "border-emerald-200 bg-emerald-50 text-emerald-700",
     },
+
     rejected: {
       label: "Rejected",
       icon: <XCircle size={15} />,
-      className: "border-[#f0c5c5] bg-[#fff2f2] text-[#b53b3b]",
+      badge:
+        "border-red-200 bg-red-50 text-red-700",
     },
   } as const;
 
   const currentStatus =
-    statusMeta[normalizedStatus as keyof typeof statusMeta] ??
+    statusMeta[
+      normalizedStatus as
+        keyof typeof statusMeta
+    ] ??
     statusMeta.draft;
 
-  const formatDate = (value?: string | null) => {
-    if (!value) return "-";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "-";
-    return date.toLocaleString("id-ID", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  const formatDate = (
+    value?: string | null
+  ) => {
+    if (!value) {
+      return "-";
+    }
+
+    const date =
+      new Date(value);
+
+    if (
+      Number.isNaN(
+        date.getTime()
+      )
+    ) {
+      return "-";
+    }
+
+    return date.toLocaleString(
+      "id-ID",
+      {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }
+    );
   };
 
-  const timelineStatusClass = (status?: string) => {
-    const value = String(status ?? "").toLowerCase();
-    if (value === "approved") return "bg-[#16a36a] ring-[#e6f7ef]";
-    if (value === "rejected") return "bg-[#d94a4a] ring-[#fff0f0]";
-    if (value === "submitted") return "bg-[#0b5eb8] ring-[#eaf3fb]";
-    return "bg-[#8a9aaa] ring-[#f0f3f6]";
+  const timelineStatusClass = (
+    status?: string
+  ) => {
+    const value =
+      String(
+        status ?? ""
+      ).toLowerCase();
+
+    if (
+      value === "approved"
+    ) {
+      return "bg-emerald-500";
+    }
+
+    if (
+      value === "rejected"
+    ) {
+      return "bg-red-500";
+    }
+
+    if (
+      value === "submitted"
+    ) {
+      return "bg-[#0B4EA2]";
+    }
+
+    return "bg-slate-400";
   };
 
   return (
-    <div className="min-h-full bg-[#f5f7fa] font-sans text-[#17324d]">
-      <div className="mx-auto w-full max-w-[1440px] px-4 py-5 sm:px-6 lg:px-8">
-        {/* HEADER */}
-        <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
+    <div className="mx-auto w-full max-w-[1600px] space-y-6 pb-10">
+
+      {/* HERO HEADER */}
+
+      <section className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+
+        {/* subtle brand accent */}
+        <div className="absolute inset-x-0 top-0 h-1 bg-[#0B4EA2]" />
+        <div className="pointer-events-none absolute right-0 top-0 h-48 w-48 rounded-full bg-[#0B4EA2]/[0.035] blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 left-0 h-40 w-40 rounded-full bg-[#5BA8D8]/[0.04] blur-3xl" />
+
+        <div className="relative min-h-[300px] px-5 py-7 sm:px-8 sm:py-9 lg:px-10">
+
+          {/* TOP BAR */}
+          <div className="flex items-start justify-between gap-4">
+
             <button
               type="button"
-              onClick={() => router.push("/dashboard/requests")}
-              className="mb-4 inline-flex h-9 items-center gap-2 rounded-lg border border-[#d9e2ec] bg-white px-3.5 text-xs font-semibold text-[#36526b] shadow-sm transition hover:border-[#b9cddd] hover:bg-[#f8fafc]"
+              onClick={() =>
+                router.push(
+                  "/dashboard/requests"
+                )
+              }
+              className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-600 shadow-sm transition hover:border-[#0B4EA2]/30 hover:bg-[#F5F9FF] hover:text-[#0B4EA2]"
             >
-              <ArrowLeft size={16} />
+              <ArrowLeft size={15} />
               Kembali ke Request
             </button>
 
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#8495a5]">
-              Request Management
-            </p>
-            <div className="mt-1 flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-bold tracking-[-0.02em] text-[#17324d] sm:text-[28px]">
-                Detail Request
-              </h1>
-              <span className="rounded-md bg-[#edf4fb] px-2 py-1 text-[11px] font-semibold text-[#0b5eb8]">
+            <div className="flex flex-wrap justify-end gap-2">
+
+              {canManageDraft && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      router.push(
+                        `/dashboard/requests/${request.id}/edit`
+                      )
+                    }
+                    className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-700 transition hover:border-[#0B4EA2]/30 hover:bg-[#F5F9FF] hover:text-[#0B4EA2]"
+                  >
+                    <Pencil size={15} />
+                    Edit
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setConfirmAction("submit")
+                    }
+                    className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#0B4EA2] px-4 text-xs font-semibold text-white shadow-sm transition hover:bg-[#083D82]"
+                  >
+                    <Send size={15} />
+                    Submit
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setConfirmAction("delete")
+                    }
+                    className="inline-flex h-10 items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3.5 text-xs font-semibold text-red-600 transition hover:bg-red-100"
+                  >
+                    <Trash2 size={15} />
+                    Delete
+                  </button>
+                </>
+              )}
+
+              {canApprove && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setConfirmAction("approve")
+                    }
+                    className="inline-flex h-10 items-center gap-2 rounded-lg bg-emerald-600 px-4 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+                  >
+                    <CheckCircle2 size={15} />
+                    Approve Request
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowRejectModal(true)
+                    }
+                    className="inline-flex h-10 items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 text-xs font-semibold text-red-600 transition hover:bg-red-100"
+                  >
+                    <XCircle size={15} />
+                    Reject
+                  </button>
+                </>
+              )}
+
+            </div>
+          </div>
+
+          {/* CENTERED HEADING */}
+          <div className="mx-auto mt-8 max-w-4xl text-center sm:mt-10">
+
+            <div className="flex flex-wrap items-center justify-center gap-2.5">
+              <span className="h-2 w-2 rounded-full bg-[#F4B400]" />
+
+              <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#0B4EA2]">
+                Request Detail
+              </span>
+
+              <span className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-500">
                 #{request.id}
               </span>
             </div>
-            <p className="mt-1 text-sm text-[#718599]">
-              Informasi lengkap dan riwayat proses approval request.
+
+            <h1 className="mt-4 text-3xl font-bold tracking-[-0.035em] text-[#18324B] sm:text-4xl lg:text-[42px]">
+              {request.title}
+            </h1>
+
+            <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500 sm:text-[15px]">
+              Tinjau detail request, status approval, aktivitas, dan riwayat perubahan pada pengajuan ini.
             </p>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {canManageDraft && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => router.push(`/dashboard/requests/${request.id}/edit`)}
-                  className="inline-flex h-10 items-center gap-2 rounded-lg border border-[#b9d7f5] bg-white px-4 text-sm font-semibold text-[#0b5eb8] transition hover:bg-[#eef6ff]"
-                >
-                  <Pencil size={16} />
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setConfirmAction("submit")}
-                  className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#0b5eb8] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#084b95]"
-                >
-                  <Send size={16} />
-                  Submit
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setConfirmAction("delete")}
-                  className="inline-flex h-10 items-center gap-2 rounded-lg border border-[#efc3c3] bg-white px-4 text-sm font-semibold text-[#c53b3b] transition hover:bg-[#fff5f5]"
-                >
-                  <Trash2 size={16} />
-                  Delete
-                </button>
-              </>
-            )}
-
-            {canApprove && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setConfirmAction("approve")}
-                  className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#0b5eb8] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#084b95]"
-                >
-                  <CheckCircle2 size={16} />
-                  Approve
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowRejectModal(true)}
-                  className="inline-flex h-10 items-center gap-2 rounded-lg border border-[#efc3c3] bg-white px-4 text-sm font-semibold text-[#c53b3b] transition hover:bg-[#fff5f5]"
-                >
-                  <XCircle size={16} />
-                  Reject
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* MAIN REQUEST CARD */}
-        <section className="overflow-hidden rounded-2xl border border-[#dce5ed] bg-white shadow-[0_3px_14px_rgba(27,61,91,0.05)]">
-          <div className="flex flex-col gap-4 border-b border-[#e7edf3] px-5 py-5 sm:px-7 lg:flex-row lg:items-center lg:justify-between">
-            <div className="min-w-0">
-              <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#8495a5]">
-                Approval Request
-              </p>
-              <h2 className="truncate text-xl font-bold text-[#17324d] sm:text-2xl">
-                {request.title}
-              </h2>
-              <p className="mt-1 text-xs text-[#7a8d9f]">
-                Request ID #{request.id}
-              </p>
-            </div>
 
             <div
-              className={`inline-flex w-fit items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-bold ${currentStatus.className}`}
+              className={`mx-auto mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-full border px-4 text-xs font-semibold ${currentStatus.badge}`}
             >
               {currentStatus.icon}
               {currentStatus.label}
             </div>
+
           </div>
 
-          <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
-            {/* DESCRIPTION */}
-            <div className="rounded-xl border border-[#e1e8ef] bg-[#f8fafc] p-5 sm:p-6">
-              <div className="flex items-center gap-2.5">
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#eaf3fb] text-[#0b5eb8]">
-                  <FileText size={16} />
-                </span>
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#8495a5]">
-                    Deskripsi
-                  </p>
-                  <p className="text-sm font-semibold text-[#17324d]">
-                    Detail pengajuan
-                  </p>
-                </div>
+        </div>
+
+      </section>
+
+      {/* STATUS STRIP */}
+
+      <section className="grid border border-slate-200 bg-white sm:grid-cols-2 lg:grid-cols-4">
+
+        <StatusStep
+          label="Draft"
+          active={
+            normalizedStatus ===
+              "draft"
+          }
+          completed={
+            [
+              "submitted",
+              "approved",
+              "rejected",
+            ].includes(
+              normalizedStatus
+            )
+          }
+          icon={
+            <FileText size={17} />
+          }
+        />
+
+        <StatusStep
+          label="Submitted"
+          active={
+            normalizedStatus ===
+              "submitted"
+          }
+          completed={
+            [
+              "approved",
+              "rejected",
+            ].includes(
+              normalizedStatus
+            )
+          }
+          icon={
+            <Send size={17} />
+          }
+        />
+
+        <StatusStep
+          label="Approved"
+          active={
+            normalizedStatus ===
+              "approved"
+          }
+          completed={false}
+          icon={
+            <CheckCircle2
+              size={17}
+            />
+          }
+          success
+        />
+
+        <StatusStep
+          label="Rejected"
+          active={
+            normalizedStatus ===
+              "rejected"
+          }
+          completed={false}
+          icon={
+            <XCircle size={17} />
+          }
+          danger
+        />
+
+      </section>
+
+      {/* MAIN GRID */}
+
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_380px]">
+
+        <div className="space-y-6">
+
+          <section className="border border-slate-200 bg-white">
+
+            <div className="flex items-center gap-3 border-b border-slate-200 px-6 py-5">
+
+              <div className="flex h-10 w-10 items-center justify-center bg-[#EDF5FF] text-[#0B4EA2]">
+
+                <ClipboardList
+                  size={20}
+                />
+
               </div>
 
-              <div className="mt-5 min-h-[150px] rounded-lg border border-[#e4ebf1] bg-white p-4 sm:min-h-[175px]">
-                <p className="whitespace-pre-wrap text-sm leading-6 text-[#52697d]">
-                  {request.description || "Tidak ada deskripsi."}
+              <div>
+
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
+                  Request Information
                 </p>
+
+                <h2 className="mt-1 text-lg font-bold text-slate-900">
+                  Deskripsi Request
+                </h2>
+
               </div>
+
             </div>
 
-            {/* METADATA */}
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-              <InfoCard
-                icon={<User size={16} />}
-                label="Dibuat Oleh"
-                value={request.user?.name ?? "-"}
-                secondary={request.user?.email ?? "-"}
-              />
-              <InfoCard
-                icon={<CalendarDays size={16} />}
-                label="Dibuat Pada"
-                value={formatDate(request.created_at)}
-              />
-              <InfoCard
-                icon={<Clock3 size={16} />}
-                label="Submitted"
-                value={formatDate(request.submitted_at)}
-              />
-              <InfoCard
-                icon={<CheckCircle2 size={16} />}
-                label="Approved"
-                value={formatDate(request.approved_at)}
-              />
-              <InfoCard
-                icon={<XCircle size={16} />}
-                label="Rejected"
-                value={formatDate(request.rejected_at)}
-                iconClassName="text-[#d34a4a] bg-[#fff1f1]"
-                className="sm:col-span-2 lg:col-span-1"
-              />
+            <div className="p-6">
+
+              <div className="min-h-[230px] border-l-4 border-[#0B4EA2] bg-slate-50 p-5">
+
+                <p className="whitespace-pre-wrap text-sm leading-7 text-slate-600">
+                  {request.description ||
+                    "Tidak ada deskripsi request."}
+                </p>
+
+              </div>
+
             </div>
-          </div>
-        </section>
 
-        {/* TIMELINE */}
-        <section className="mt-5 overflow-hidden rounded-2xl border border-[#dce5ed] bg-white shadow-[0_3px_14px_rgba(27,61,91,0.04)]">
-          <SectionHeader
-            eyebrow="Workflow"
-            title="Approval Timeline"
-            count={`${timeline.length} aktivitas`}
-          />
+          </section>
 
-          {timeline.length === 0 ? (
-            <EmptyState text="Belum ada aktivitas pada timeline." />
-          ) : (
-            <div className="px-5 py-5 sm:px-7 sm:py-6">
-              <div className="relative">
-                {timeline.map((item: any, index: number) => {
-                  const isLast = index === timeline.length - 1;
-                  const status = String(item.status ?? "").toLowerCase();
+          <section className="border border-slate-200 bg-white">
 
-                  return (
-                    <div
-                      key={item.id ?? index}
-                      className={`relative flex gap-3.5 ${isLast ? "pb-0" : "pb-4"}`}
-                    >
-                      <div className="relative flex w-5 shrink-0 justify-center">
-                        {!isLast && (
-                          <span className="absolute left-1/2 top-5 h-[calc(100%+2px)] w-px -translate-x-1/2 bg-[#dbe4ec]" />
-                        )}
-                        <span
-                          className={`relative z-10 mt-1.5 h-3.5 w-3.5 rounded-full ring-4 ${timelineStatusClass(status)}`}
-                        />
-                      </div>
+            <SectionHeader
+              icon={
+                <Clock3 size={19} />
+              }
+              eyebrow="Workflow Activity"
+              title="Approval Timeline"
+              count={`${timeline.length} aktivitas`}
+            />
 
-                      <div className="-mt-0.5 min-w-0 flex-1 rounded-xl border border-[#e1e8ef] bg-[#fbfcfd] px-4 py-3.5 sm:px-5">
-                        <div className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:justify-between">
-                          <div>
-                            <p className="text-sm font-bold capitalize text-[#17324d]">
-                              {item.status || "Aktivitas"}
-                            </p>
-                            <p className="mt-1 text-xs text-[#718599]">
-                              {item.user?.name || "-"}
-                            </p>
+            {timeline.length ===
+            0 ? (
+
+              <EmptyState
+                text="Belum ada aktivitas pada timeline."
+              />
+
+            ) : (
+
+              <div className="p-6">
+
+                <div className="relative">
+
+                  {timeline.map(
+                    (
+                      item: any,
+                      index: number
+                    ) => {
+                      const isLast =
+                        index ===
+                        timeline.length -
+                          1;
+
+                      const status =
+                        String(
+                          item.status ??
+                            ""
+                        ).toLowerCase();
+
+                      return (
+
+                        <div
+                          key={
+                            item.id ??
+                            index
+                          }
+                          className={`relative flex gap-4 ${
+                            isLast
+                              ? ""
+                              : "pb-7"
+                          }`}
+                        >
+
+                          <div className="relative flex w-5 shrink-0 justify-center">
+
+                            {!isLast && (
+
+                              <span className="absolute top-5 h-[calc(100%+12px)] w-px bg-slate-200" />
+
+                            )}
+
+                            <span
+                              className={`relative z-10 mt-1 flex h-4 w-4 items-center justify-center border-4 border-white ${timelineStatusClass(
+                                status
+                              )}`}
+                            />
+
                           </div>
-                          <span className="whitespace-nowrap text-[11px] text-[#8495a5]">
-                            {formatDate(item.created_at)}
-                          </span>
+
+                          <div className="min-w-0 flex-1 border border-slate-200 bg-slate-50">
+
+                            <div className="flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+
+                              <div>
+
+                                <p className="text-sm font-bold capitalize text-slate-800">
+                                  {item.status ||
+                                    "Aktivitas"}
+                                </p>
+
+                                <p className="mt-1 text-xs text-slate-500">
+                                  {item.user
+                                    ?.name ||
+                                    "-"}
+                                </p>
+
+                              </div>
+
+                              <span className="text-xs text-slate-400">
+                                {formatDate(
+                                  item.created_at
+                                )}
+                              </span>
+
+                            </div>
+
+                            <div className="px-4 py-4">
+
+                              <p className="text-sm leading-6 text-slate-600">
+
+                                {item.comment ||
+                                  (
+                                    status ===
+                                    "submitted"
+                                      ? "Request berhasil disubmit dan menunggu proses review."
+                                      : "Status request diperbarui."
+                                  )}
+
+                              </p>
+
+                            </div>
+
+                          </div>
+
                         </div>
 
-                        <p className="mt-3 rounded-lg bg-white px-3 py-2.5 text-sm leading-5 text-[#60768a] ring-1 ring-[#edf1f5]">
-                          {item.comment ||
-                            (status === "submitted"
-                              ? "Request submitted"
-                              : "Status request diperbarui.")}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
+                      );
+                    }
+                  )}
+
+                </div>
+
               </div>
-            </div>
-          )}
-        </section>
 
-        {/* HISTORY */}
-        <section className="mt-5 overflow-hidden rounded-2xl border border-[#dce5ed] bg-white shadow-[0_3px_14px_rgba(27,61,91,0.04)]">
-          <SectionHeader
-            eyebrow="Audit Trail"
-            title="Approval History"
-            count={`${history.length} aktivitas`}
-          />
+            )}
 
-          {history.length === 0 ? (
-            <EmptyState text="Belum ada approval history." />
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[760px] text-left">
-                <thead>
-                  <tr className="border-b border-[#e3eaf1] bg-[#f8fafc]">
-                    {[
-                      "Dari",
-                      "Ke",
-                      "Oleh",
-                      "Komentar",
-                      "Waktu",
-                    ].map((heading) => (
-                      <th
-                        key={heading}
-                        className="px-5 py-3 text-[10px] font-bold uppercase tracking-[0.1em] text-[#718599] sm:px-6"
-                      >
-                        {heading}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {history.map((item: any) => (
-                    <tr
-                      key={item.id}
-                      className="border-b border-[#edf1f5] last:border-0 hover:bg-[#fbfcfe]"
-                    >
-                      <td className="px-5 py-4 text-sm capitalize text-[#50677d] sm:px-6">
-                        {item.from_status || "-"}
-                      </td>
-                      <td className="px-5 py-4 sm:px-6">
-                        <span className="inline-flex rounded-md border border-[#dce7f1] bg-[#f3f7fb] px-2.5 py-1 text-[11px] font-bold capitalize text-[#45647f]">
-                          {item.to_status || "-"}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4 text-sm font-semibold text-[#29465f] sm:px-6">
-                        {item.user?.name || "-"}
-                      </td>
-                      <td className="max-w-[320px] px-5 py-4 text-sm leading-5 text-[#60768a] sm:px-6">
-                        {item.comment || "-"}
-                      </td>
-                      <td className="whitespace-nowrap px-5 py-4 text-xs text-[#7d8f9f] sm:px-6">
-                        {formatDate(item.created_at)}
-                      </td>
+          </section>
+
+          <section className="overflow-hidden border border-slate-200 bg-white">
+
+            <SectionHeader
+              icon={
+                <History size={19} />
+              }
+              eyebrow="Audit Trail"
+              title="Approval History"
+              count={`${history.length} aktivitas`}
+            />
+
+            {history.length ===
+            0 ? (
+
+              <EmptyState
+                text="Belum ada approval history."
+              />
+
+            ) : (
+
+              <div className="overflow-x-auto">
+
+                <table className="w-full min-w-[760px]">
+
+                  <thead>
+
+                    <tr className="border-b border-slate-200 bg-slate-50">
+
+                      {[
+                        "Status Sebelumnya",
+                        "Status Baru",
+                        "Dilakukan Oleh",
+                        "Komentar",
+                        "Waktu",
+                      ].map(
+                        (heading) => (
+
+                          <th
+                            key={heading}
+                            className="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400"
+                          >
+
+                            {heading}
+
+                          </th>
+
+                        )
+                      )}
+
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+
+                  </thead>
+
+                  <tbody>
+
+                    {history.map(
+                      (item: any) => (
+
+                        <tr
+                          key={item.id}
+                          className="border-b border-slate-100 transition hover:bg-slate-50"
+                        >
+
+                          <td className="px-6 py-4">
+
+                            <StatusLabel
+                              value={
+                                item.from_status ||
+                                "-"
+                              }
+                            />
+
+                          </td>
+
+                          <td className="px-6 py-4">
+
+                            <StatusLabel
+                              value={
+                                item.to_status ||
+                                "-"
+                              }
+                              highlight
+                            />
+
+                          </td>
+
+                          <td className="px-6 py-4 text-sm font-semibold text-slate-700">
+
+                            {item.user
+                              ?.name ||
+                              "-"}
+
+                          </td>
+
+                          <td className="max-w-[300px] px-6 py-4 text-sm leading-6 text-slate-500">
+
+                            {item.comment ||
+                              "-"}
+
+                          </td>
+
+                          <td className="whitespace-nowrap px-6 py-4 text-xs text-slate-400">
+
+                            {formatDate(
+                              item.created_at
+                            )}
+
+                          </td>
+
+                        </tr>
+
+                      )
+                    )}
+
+                  </tbody>
+
+                </table>
+
+              </div>
+
+            )}
+
+          </section>
+
+        </div>
+
+        <aside className="space-y-6">
+
+          <section className="border border-slate-200 bg-white">
+
+            <div className="border-b border-slate-200 bg-[#263f5f] px-5 py-4">
+
+              <div className="flex items-center gap-3">
+
+                <div className="flex h-9 w-9 items-center justify-center bg-white/10 text-white">
+
+                  <ShieldCheck
+                    size={18}
+                  />
+
+                </div>
+
+                <div>
+
+                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-300">
+                    Request Data
+                  </p>
+
+                  <h2 className="mt-1 text-base font-bold text-white">
+                    Informasi Request
+                  </h2>
+
+                </div>
+
+              </div>
+
             </div>
-          )}
-        </section>
-      </div>
+
+            <div className="divide-y divide-slate-100">
+
+              <InfoRow
+                icon={
+                  <User size={17} />
+                }
+                label="Dibuat Oleh"
+                value={
+                  request.user
+                    ?.name ?? "-"
+                }
+                secondary={
+                  request.user
+                    ?.email
+                }
+              />
+
+              <InfoRow
+                icon={
+                  <CalendarDays
+                    size={17}
+                  />
+                }
+                label="Tanggal Dibuat"
+                value={formatDate(
+                  request.created_at
+                )}
+              />
+
+              <InfoRow
+                icon={
+                  <Send size={17} />
+                }
+                label="Submitted"
+                value={formatDate(
+                  request.submitted_at
+                )}
+              />
+
+              <InfoRow
+                icon={
+                  <CheckCircle2
+                    size={17}
+                  />
+                }
+                label="Approved"
+                value={formatDate(
+                  request.approved_at
+                )}
+                success
+              />
+
+              <InfoRow
+                icon={
+                  <XCircle size={17} />
+                }
+                label="Rejected"
+                value={formatDate(
+                  request.rejected_at
+                )}
+                danger
+              />
+
+            </div>
+
+          </section>
+
+          <section className="border border-slate-200 bg-white p-5">
+
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
+              Current Status
+            </p>
+
+            <div className="mt-4 flex items-center gap-4">
+
+              <div
+                className={`flex h-12 w-12 items-center justify-center border ${currentStatus.badge}`}
+              >
+
+                {currentStatus.icon}
+
+              </div>
+
+              <div>
+
+                <p className="text-base font-bold text-slate-900">
+                  {currentStatus.label}
+                </p>
+
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+
+                  {normalizedStatus ===
+                    "submitted" &&
+                    "Request sedang menunggu keputusan dari Manager."}
+
+                  {normalizedStatus ===
+                    "approved" &&
+                    "Request telah disetujui dan proses selesai."}
+
+                  {normalizedStatus ===
+                    "rejected" &&
+                    "Request ditolak dan keputusan telah dicatat."}
+
+                  {normalizedStatus ===
+                    "draft" &&
+                    "Request masih dalam tahap draft dan belum disubmit."}
+
+                </p>
+
+              </div>
+
+            </div>
+
+          </section>
+
+        </aside>
+
+      </section>
 
       {/* CONFIRM MODAL */}
+
       {confirmAction && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#102a43]/40 px-4 backdrop-blur-[2px]">
-          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-[#dce5ed] bg-white shadow-[0_24px_70px_rgba(20,55,90,0.2)]">
-            <div className="p-6">
-              <div className="flex gap-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#fff6dc] text-[#b77b00]">
-                  <AlertTriangle size={21} />
+
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#102a43]/50 px-4 backdrop-blur-sm">
+
+          <div className="w-full max-w-md overflow-hidden bg-white shadow-2xl">
+
+            <div className="border-b border-slate-200 px-6 py-5">
+
+              <div className="flex items-start gap-4">
+
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center bg-amber-50 text-amber-600">
+
+                  <AlertTriangle
+                    size={21}
+                  />
+
                 </div>
+
                 <div>
-                  <h2 className="text-lg font-bold text-[#17324d]">Konfirmasi</h2>
-                  <p className="mt-1.5 text-sm leading-5 text-[#718599]">
-                    {confirmAction === "submit" &&
-                      "Yakin ingin submit request ini?"}
-                    {confirmAction === "approve" &&
-                      "Yakin ingin approve request ini?"}
-                    {confirmAction === "delete" &&
-                      "Yakin ingin menghapus request ini? Data yang dihapus tidak dapat dikembalikan."}
+
+                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">
+                    Konfirmasi Aksi
                   </p>
+
+                  <h2 className="mt-1 text-lg font-bold text-slate-900">
+                    Apakah kamu yakin?
+                  </h2>
+
                 </div>
+
               </div>
 
-              <div className="mt-5 rounded-xl border border-[#e2e9f0] bg-[#f7f9fb] p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#8a9aaa]">
-                  Request
-                </p>
-                <p className="mt-1 text-sm font-bold text-[#17324d]">
+            </div>
+
+            <div className="p-6">
+
+              <p className="text-sm leading-6 text-slate-600">
+
+                {confirmAction ===
+                  "submit" &&
+                  "Request akan dikirim untuk menunggu proses approval."}
+
+                {confirmAction ===
+                  "approve" &&
+                  "Request akan disetujui dan status approval akan diperbarui."}
+
+                {confirmAction ===
+                  "delete" &&
+                  "Request akan dihapus secara permanen dan tidak dapat dikembalikan."}
+
+              </p>
+
+              <div className="mt-5 border border-slate-200 bg-slate-50 p-4">
+
+                <p className="text-xs font-bold text-slate-900">
                   {request.title}
                 </p>
-                <p className="mt-1 text-xs text-[#718599]">
+
+                <p className="mt-1 text-xs text-slate-500">
                   Request ID #{request.id}
                 </p>
+
               </div>
+
             </div>
 
-            <div className="flex justify-end gap-2 border-t border-[#e7edf3] bg-[#fbfcfd] px-6 py-4">
+            <div className="flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-6 py-4">
+
               <button
                 type="button"
-                disabled={confirmLoading}
-                onClick={() => {
-                  setConfirmAction(null);
-                  setConfirmLoading(false);
-                }}
-                className="h-10 rounded-lg border border-[#d7e1ea] bg-white px-4 text-sm font-semibold text-[#53687c] transition hover:bg-[#f5f8fb] disabled:opacity-50"
+                disabled={
+                  confirmLoading
+                }
+                onClick={() =>
+                  setConfirmAction(
+                    null
+                  )
+                }
+                className="h-10 border border-slate-300 bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-100"
               >
+
                 Batal
+
               </button>
+
               <button
                 type="button"
-                disabled={confirmLoading}
+                disabled={
+                  confirmLoading
+                }
                 onClick={() => {
-                  if (confirmAction === "submit") handleSubmit();
-                  if (confirmAction === "approve") handleApprove();
-                  if (confirmAction === "delete") handleDelete();
+
+                  if (
+                    confirmAction ===
+                    "submit"
+                  ) {
+                    void handleSubmit();
+                  }
+
+                  if (
+                    confirmAction ===
+                    "approve"
+                  ) {
+                    void handleApprove();
+                  }
+
+                  if (
+                    confirmAction ===
+                    "delete"
+                  ) {
+                    void handleDelete();
+                  }
+
                 }}
-                className={`inline-flex h-10 items-center gap-2 rounded-lg px-4 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                  confirmAction === "delete"
-                    ? "bg-[#c53b3b] hover:bg-[#b53232]"
-                    : "bg-[#0b5eb8] hover:bg-[#084b95]"
+                className={`inline-flex h-10 items-center gap-2 px-4 text-sm font-bold text-white transition disabled:opacity-60 ${
+                  confirmAction ===
+                  "delete"
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-[#0B4EA2] hover:bg-[#083D82]"
                 }`}
               >
+
                 {confirmLoading ? (
+
                   <>
-                    <Loader2 size={16} className="animate-spin" />
+
+                    <Loader2
+                      size={16}
+                      className="animate-spin"
+                    />
+
                     Memproses...
+
                   </>
+
                 ) : (
+
                   <>
-                    {confirmAction === "submit" && (
-                      <>
-                        <Send size={16} />
-                        Ya, Submit
-                      </>
-                    )}
-                    {confirmAction === "approve" && (
-                      <>
-                        <CheckCircle2 size={16} />
-                        Ya, Approve
-                      </>
-                    )}
-                    {confirmAction === "delete" && (
-                      <>
-                        <Trash2 size={16} />
-                        Ya, Hapus
-                      </>
-                    )}
+
+                    {confirmAction ===
+                      "submit" &&
+                      "Ya, Submit"}
+
+                    {confirmAction ===
+                      "approve" &&
+                      "Ya, Approve"}
+
+                    {confirmAction ===
+                      "delete" &&
+                      "Ya, Hapus"}
+
                   </>
+
                 )}
+
               </button>
+
             </div>
+
           </div>
+
         </div>
+
       )}
 
       {/* REJECT MODAL */}
+
       {showRejectModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#102a43]/40 px-4 backdrop-blur-[2px]">
-          <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-[#dce5ed] bg-white shadow-[0_24px_70px_rgba(20,55,90,0.2)]">
-            <div className="flex items-start justify-between border-b border-[#e7edf3] px-6 py-5">
-              <div className="flex gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff1f1] text-[#c53b3b]">
-                  <XCircle size={21} />
+
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#102a43]/50 px-4 backdrop-blur-sm">
+
+          <div className="w-full max-w-lg overflow-hidden bg-white shadow-2xl">
+
+            <div className="flex items-start justify-between border-b border-slate-200 px-6 py-5">
+
+              <div className="flex gap-4">
+
+                <div className="flex h-11 w-11 items-center justify-center bg-red-50 text-red-600">
+
+                  <XCircle
+                    size={22}
+                  />
+
                 </div>
+
                 <div>
-                  <h2 className="text-lg font-bold text-[#17324d]">Tolak Request</h2>
-                  <p className="mt-1 text-sm text-[#718599]">
-                    Berikan alasan mengapa request ini ditolak.
+
+                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-red-500">
+                    Reject Request
                   </p>
+
+                  <h2 className="mt-1 text-lg font-bold text-slate-900">
+                    Tolak Request
+                  </h2>
+
+                  <p className="mt-1 text-sm text-slate-500">
+                    Berikan alasan penolakan
+                    request.
+                  </p>
+
                 </div>
+
               </div>
+
               <button
                 type="button"
                 onClick={() => {
-                  setShowRejectModal(false);
-                  setRejectComment("");
+                  setShowRejectModal(
+                    false
+                  );
+
+                  setRejectComment(
+                    ""
+                  );
                 }}
-                className="rounded-lg p-2 text-[#8a9aaa] transition hover:bg-[#f3f6f9] hover:text-[#53687c]"
+                className="p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
               >
+
                 <X size={19} />
+
               </button>
+
             </div>
 
             <div className="p-6">
-              <div className="rounded-xl border border-[#e2e9f0] bg-[#f7f9fb] p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#8a9aaa]">
-                  Request
-                </p>
-                <p className="mt-1 text-sm font-bold text-[#17324d]">
+
+              <div className="border border-slate-200 bg-slate-50 p-4">
+
+                <p className="text-xs font-bold text-slate-900">
                   {request.title}
                 </p>
+
+                <p className="mt-1 text-xs text-slate-500">
+                  Request ID #{request.id}
+                </p>
+
               </div>
 
               <div className="mt-5">
+
                 <div className="mb-2 flex items-center justify-between">
+
                   <label
                     htmlFor="reject-comment"
-                    className="text-sm font-semibold text-[#36526b]"
+                    className="text-sm font-bold text-slate-700"
                   >
                     Alasan Penolakan
                   </label>
-                  <span className="text-[11px] text-[#8a9aaa]">
-                    {rejectComment.length}/500
+
+                  <span className="text-xs text-slate-400">
+                    {rejectComment.length}
+                    /500
                   </span>
+
                 </div>
 
                 <textarea
                   id="reject-comment"
-                  value={rejectComment}
-                  onChange={(e) => setRejectComment(e.target.value)}
+                  value={
+                    rejectComment
+                  }
+                  onChange={(event) =>
+                    setRejectComment(
+                      event.target.value
+                    )
+                  }
                   rows={5}
                   maxLength={500}
-                  placeholder="Tulis alasan penolakan..."
-                  className="w-full resize-none rounded-xl border border-[#d7e1ea] bg-white p-4 text-sm text-[#27445f] outline-none transition placeholder:text-[#9aa9b7] focus:border-[#c53b3b] focus:ring-2 focus:ring-[#fdeaea]"
+                  placeholder="Tulis alasan mengapa request ini ditolak..."
+                  className="w-full resize-none border border-slate-300 bg-white p-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:ring-2 focus:ring-red-100"
                   autoFocus
                 />
-                <p className="mt-2 text-xs text-[#8a9aaa]">
-                  Alasan akan disimpan pada approval history.
-                </p>
+
               </div>
+
             </div>
 
-            <div className="flex justify-end gap-2 border-t border-[#e7edf3] bg-[#fbfcfd] px-6 py-4">
+            <div className="flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-6 py-4">
+
               <button
                 type="button"
-                disabled={rejectLoading}
+                disabled={
+                  rejectLoading
+                }
                 onClick={() => {
-                  setShowRejectModal(false);
-                  setRejectComment("");
+                  setShowRejectModal(
+                    false
+                  );
+
+                  setRejectComment(
+                    ""
+                  );
                 }}
-                className="h-10 rounded-lg border border-[#d7e1ea] bg-white px-4 text-sm font-semibold text-[#53687c] transition hover:bg-[#f5f8fb] disabled:opacity-50"
+                className="h-10 border border-slate-300 bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-100"
               >
+
                 Batal
+
               </button>
+
               <button
                 type="button"
-                disabled={rejectLoading || !rejectComment.trim()}
-                onClick={handleReject}
-                className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#c53b3b] px-4 text-sm font-semibold text-white transition hover:bg-[#b53232] disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={
+                  rejectLoading ||
+                  !rejectComment.trim()
+                }
+                onClick={() =>
+                  void handleReject()
+                }
+                className="inline-flex h-10 items-center gap-2 bg-red-600 px-4 text-sm font-bold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
+
                 {rejectLoading ? (
+
                   <>
-                    <Loader2 size={16} className="animate-spin" />
+
+                    <Loader2
+                      size={16}
+                      className="animate-spin"
+                    />
+
                     Menolak...
+
                   </>
+
                 ) : (
+
                   <>
-                    <XCircle size={16} />
+
+                    <XCircle
+                      size={16}
+                    />
+
                     Tolak Request
+
                   </>
+
                 )}
+
               </button>
+
             </div>
+
           </div>
+
         </div>
+
       )}
+
     </div>
   );
 }
 
-function InfoCard({
+/* ================================
+   STATUS STEP
+================================ */
+
+function StatusStep({
+  label,
+  active,
+  completed,
+  icon,
+  success = false,
+  danger = false,
+}: {
+  label: string;
+  active: boolean;
+  completed: boolean;
+  icon: React.ReactNode;
+  success?: boolean;
+  danger?: boolean;
+}) {
+  const activeClass =
+    danger
+      ? "border-red-500 bg-red-50 text-red-600"
+      : success
+      ? "border-emerald-500 bg-emerald-50 text-emerald-600"
+      : "border-[#0B4EA2] bg-[#EDF5FF] text-[#0B4EA2]";
+
+  return (
+    <div className="flex min-h-[100px] items-center gap-4 border-b border-slate-200 px-6 py-5 last:border-b-0 sm:border-r lg:border-b-0">
+
+      <div
+        className={`flex h-10 w-10 shrink-0 items-center justify-center border ${
+          active
+            ? activeClass
+            : completed
+            ? "border-[#0B4EA2] bg-[#0B4EA2] text-white"
+            : "border-slate-200 bg-slate-50 text-slate-400"
+        }`}
+      >
+
+        {completed ? (
+          <CheckCircle2
+            size={18}
+          />
+        ) : (
+          icon
+        )}
+
+      </div>
+
+      <div>
+
+        <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">
+          Workflow Step
+        </p>
+
+        <p
+          className={`mt-1 text-sm font-bold ${
+            active
+              ? "text-slate-900"
+              : "text-slate-500"
+          }`}
+        >
+          {label}
+        </p>
+
+      </div>
+
+    </div>
+  );
+}
+
+/* ================================
+   INFO ROW
+================================ */
+
+function InfoRow({
   icon,
   label,
   value,
   secondary,
-  className = "",
-  iconClassName = "",
+  success = false,
+  danger = false,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   secondary?: string;
-  className?: string;
-  iconClassName?: string;
+  success?: boolean;
+  danger?: boolean;
 }) {
+  const iconClass =
+    danger
+      ? "bg-red-50 text-red-500"
+      : success
+      ? "bg-emerald-50 text-emerald-600"
+      : "bg-[#EDF5FF] text-[#0B4EA2]";
+
   return (
-    <div
-      className={`rounded-xl border border-[#e1e8ef] bg-white px-4 py-3.5 ${className}`}
-    >
-      <div className="flex items-start gap-3">
-        <span
-          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#eaf3fb] text-[#0b5eb8] ${iconClassName}`}
-        >
-          {icon}
-        </span>
-        <div className="min-w-0 pt-0.5">
-          <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8495a5]">
-            {label}
-          </p>
-          <p className="mt-1 truncate text-sm font-bold text-[#17324d]">
-            {value}
-          </p>
-          {secondary && (
-            <p className="mt-0.5 truncate text-xs text-[#718599]">
-              {secondary}
-            </p>
-          )}
-        </div>
+    <div className="flex gap-3 px-5 py-4">
+
+      <div
+        className={`flex h-9 w-9 shrink-0 items-center justify-center ${iconClass}`}
+      >
+        {icon}
       </div>
+
+      <div className="min-w-0">
+
+        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+          {label}
+        </p>
+
+        <p className="mt-1 truncate text-sm font-bold text-slate-800">
+          {value}
+        </p>
+
+        {secondary && (
+
+          <p className="mt-1 truncate text-xs text-slate-500">
+            {secondary}
+          </p>
+
+        )}
+
+      </div>
+
     </div>
   );
 }
 
+/* ================================
+   SECTION HEADER
+================================ */
+
 function SectionHeader({
+  icon,
   eyebrow,
   title,
   count,
 }: {
+  icon: React.ReactNode;
   eyebrow: string;
   title: string;
   count: string;
 }) {
   return (
-    <div className="flex items-end justify-between gap-4 border-b border-[#e5ebf1] px-5 py-4 sm:px-7">
-      <div>
-        <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#8495a5]">
-          {eyebrow}
-        </p>
-        <h2 className="mt-1 text-lg font-bold text-[#17324d]">{title}</h2>
+    <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-6 py-5">
+
+      <div className="flex items-center gap-3">
+
+        <div className="flex h-10 w-10 items-center justify-center bg-[#EDF5FF] text-[#0B4EA2]">
+          {icon}
+        </div>
+
+        <div>
+
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+            {eyebrow}
+          </p>
+
+          <h2 className="mt-1 text-lg font-bold text-slate-900">
+            {title}
+          </h2>
+
+        </div>
+
       </div>
-      <span className="rounded-full bg-[#f2f6fa] px-2.5 py-1 text-[11px] font-semibold text-[#718599]">
+
+      <span className="border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-500">
         {count}
       </span>
+
     </div>
   );
 }
 
-function EmptyState({ text }: { text: string }) {
+/* ================================
+   STATUS LABEL
+================================ */
+
+function StatusLabel({
+  value,
+  highlight = false,
+}: {
+  value: string;
+  highlight?: boolean;
+}) {
+  const status =
+    value.toLowerCase();
+
+  const color =
+    status === "approved"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+      : status === "rejected"
+      ? "border-red-200 bg-red-50 text-red-700"
+      : status === "submitted"
+      ? "border-amber-200 bg-amber-50 text-amber-700"
+      : highlight
+      ? "border-blue-200 bg-blue-50 text-blue-700"
+      : "border-slate-200 bg-slate-50 text-slate-600";
+
   return (
-    <div className="px-5 py-6 sm:px-7">
-      <div className="rounded-xl border border-dashed border-[#cbd8e4] bg-[#f8fafc] px-5 py-8 text-center text-sm text-[#718599]">
-        {text}
+    <span
+      className={`inline-flex border px-2.5 py-1 text-[11px] font-bold capitalize ${color}`}
+    >
+      {value}
+    </span>
+  );
+}
+
+/* ================================
+   EMPTY STATE
+================================ */
+
+function EmptyState({
+  text,
+}: {
+  text: string;
+}) {
+  return (
+    <div className="p-6">
+
+      <div className="flex flex-col items-center justify-center border border-dashed border-slate-300 bg-slate-50 px-5 py-12 text-center">
+
+        <CircleDot
+          size={24}
+          className="text-slate-400"
+        />
+
+        <p className="mt-3 text-sm text-slate-500">
+          {text}
+        </p>
+
       </div>
+
     </div>
   );
 }
