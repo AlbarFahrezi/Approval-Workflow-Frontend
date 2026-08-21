@@ -134,9 +134,15 @@ export default function ProfilePage() {
   ) => {
     const file = event.target.files?.[0];
 
-    if (!file) {
-      return;
-    }
+if (!file) {
+  return;
+}
+
+console.log("FILE DIPILIH:", {
+  name: file.name,
+  type: file.type,
+  size: file.size,
+});
 
     /*
     |--------------------------------------------------------------------------
@@ -144,10 +150,35 @@ export default function ProfilePage() {
     |--------------------------------------------------------------------------
     */
 
-    if (!file.type.startsWith("image/")) {
-      setErrorMessage("File avatar harus berupa gambar.");
-      return;
-    }
+    const allowedTypes = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/jpg",
+];
+
+const allowedExtensions = [
+  "jpg",
+  "jpeg",
+  "png",
+  "webp",
+];
+
+const extension = file.name
+  .split(".")
+  .pop()
+  ?.toLowerCase();
+
+const isValidImage =
+  allowedTypes.includes(file.type) ||
+  (extension && allowedExtensions.includes(extension));
+
+if (!isValidImage) {
+  setErrorMessage(
+    "File avatar harus berupa JPG, JPEG, PNG, atau WEBP."
+  );
+  return;
+}
 
     /*
     |--------------------------------------------------------------------------

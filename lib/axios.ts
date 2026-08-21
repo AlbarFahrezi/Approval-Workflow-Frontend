@@ -8,8 +8,8 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL: "http://127.0.0.1:8000/api",
+
   headers: {
-    "Content-Type": "application/json",
     Accept: "application/json",
   },
 });
@@ -26,10 +26,6 @@ const TOKEN_KEY = "approval_token";
 |--------------------------------------------------------------------------
 | GET AUTH TOKEN
 |--------------------------------------------------------------------------
-| Prioritas:
-| 1. localStorage
-| 2. sessionStorage
-|--------------------------------------------------------------------------
 */
 
 function getAuthToken(): string | null {
@@ -44,10 +40,7 @@ function getAuthToken(): string | null {
     return localToken;
   }
 
-  const sessionToken =
-    window.sessionStorage.getItem(TOKEN_KEY);
-
-  return sessionToken;
+  return window.sessionStorage.getItem(TOKEN_KEY);
 }
 
 /*
@@ -72,9 +65,6 @@ api.interceptors.request.use(
     |--------------------------------------------------------------------------
     | LOGIN REQUEST
     |--------------------------------------------------------------------------
-    | /login adalah endpoint public.
-    | Jangan kirim token lama.
-    |--------------------------------------------------------------------------
     */
 
     if (isLoginRequest) {
@@ -93,12 +83,11 @@ api.interceptors.request.use(
 
     /*
     |--------------------------------------------------------------------------
-    | PROTECTED REQUEST
+    | AUTH TOKEN
     |--------------------------------------------------------------------------
     */
 
-    const token =
-      getAuthToken();
+    const token = getAuthToken();
 
     if (token) {
       config.headers =
@@ -116,6 +105,30 @@ api.interceptors.request.use(
     } else {
       console.warn(
         "[AXIOS] ⚠️ Token tidak ditemukan:",
+        url
+      );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | FORM DATA
+    |--------------------------------------------------------------------------
+    |
+    | Kalau request menggunakan FormData, jangan paksa
+    | Content-Type menjadi application/json.
+    |
+    | Browser akan otomatis menentukan:
+    |
+    | multipart/form-data; boundary=...
+    |
+    |--------------------------------------------------------------------------
+    */
+
+    if (config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
+
+      console.log(
+        "[AXIOS] FORM DATA:",
         url
       );
     }
@@ -161,15 +174,14 @@ api.interceptors.response.use(
     |--------------------------------------------------------------------------
     | LOGIN 401
     |--------------------------------------------------------------------------
-    | Jangan dianggap token expired.
-    | /login memang bisa 401 karena credential salah.
-    |--------------------------------------------------------------------------
     */
 
     if (
       status === 401 &&
-      (url === "/login" ||
-        url?.endsWith("/login"))
+      (
+        url === "/login" ||
+        url?.endsWith("/login")
+      )
     ) {
       console.warn(
         "[AXIOS] Login ditolak: email/password tidak valid."
