@@ -227,129 +227,146 @@ if (!isValidImage) {
   |--------------------------------------------------------------------------
   */
 
-  const handleSubmit = async (
-    event: React.FormEvent<HTMLFormElement>
-  ) => {
-    event.preventDefault();
+ const handleSubmit = async (
+  event: React.FormEvent<HTMLFormElement>
+) => {
+  event.preventDefault();
 
-    try {
-      setSaving(true);
-      setSuccessMessage("");
-      setErrorMessage("");
+  try {
+    setSaving(true);
+    setSuccessMessage("");
+    setErrorMessage("");
 
-      const formData = new FormData();
+    const formData = new FormData();
 
-      formData.append("name", name);
-      formData.append("email", email);
+    formData.append("name", name);
+    formData.append("email", email);
 
-      if (avatarFile) {
-        formData.append("avatar", avatarFile);
-      }
-
-      /*
-      |--------------------------------------------------------------------------
-      | UPDATE PROFILE
-      |--------------------------------------------------------------------------
-      */
-
-      const response = await api.post(
-        "/profile",
-        formData,
-        {
-          headers: {
-            Accept: "application/json",
-          },
-        }
-      );
-
-      console.log(
-        "UPDATE PROFILE RESPONSE:",
-        response.data
-      );
-
-      const updatedUser: UserData =
-        response.data.data;
-
-      /*
-      |--------------------------------------------------------------------------
-      | UPDATE STATE
-      |--------------------------------------------------------------------------
-      */
-
-      setUser(updatedUser);
-      setName(updatedUser.name ?? "");
-      setEmail(updatedUser.email ?? "");
-      setAvatarPreview(
-        updatedUser.avatar_url ?? null
-      );
-      setAvatarFile(null);
-
-      /*
-      |--------------------------------------------------------------------------
-      | UPDATE LOCAL STORAGE USER
-      |--------------------------------------------------------------------------
-      */
-
-      if (typeof window !== "undefined") {
-        localStorage.setItem(
-          "approval_user",
-          JSON.stringify(updatedUser)
-        );
-      }
-
-      setSuccessMessage(
-        response.data.message ||
-          "Profile berhasil diperbarui."
-      );
-
-      /*
-      |--------------------------------------------------------------------------
-      | RESET FILE INPUT
-      |--------------------------------------------------------------------------
-      */
-
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    } catch (error: any) {
-      console.error(
-        "UPDATE PROFILE ERROR:",
-        error
-      );
-
-      const message =
-        error?.response?.data?.message ||
-        "Gagal memperbarui profile.";
-
-      setErrorMessage(message);
-
-      /*
-      |--------------------------------------------------------------------------
-      | TOKEN INVALID / EXPIRED
-      |--------------------------------------------------------------------------
-      */
-
-      if (
-        error?.response?.status === 401
-      ) {
-        if (typeof window !== "undefined") {
-          localStorage.removeItem(
-            "approval_token"
-          );
-
-          localStorage.removeItem(
-            "approval_user"
-          );
-        }
-
-        setErrorMessage(
-          "Session login sudah tidak valid. Silakan login kembali."
-        );
-      }
-    } finally {
-      setSaving(false);
+    if (avatarFile) {
+      formData.append("avatar", avatarFile);
     }
-  };
+
+    /*
+    |--------------------------------------------------------------------------
+    | UPDATE PROFILE
+    |--------------------------------------------------------------------------
+    */
+
+    const response = await api.post(
+      "/profile",
+      formData,
+      {
+        headers: {
+          Accept: "application/json",
+        },
+      }
+    );
+
+    console.log(
+      "UPDATE PROFILE RESPONSE:",
+      response.data
+    );
+
+    const updatedUser: UserData =
+      response.data.data;
+
+    /*
+    |--------------------------------------------------------------------------
+    | UPDATE STATE
+    |--------------------------------------------------------------------------
+    */
+
+    setUser(updatedUser);
+    setName(updatedUser.name ?? "");
+    setEmail(updatedUser.email ?? "");
+    setAvatarPreview(
+      updatedUser.avatar_url ?? null
+    );
+    setAvatarFile(null);
+
+    /*
+    |--------------------------------------------------------------------------
+    | UPDATE LOCAL STORAGE USER
+    |--------------------------------------------------------------------------
+    */
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem(
+        "approval_user",
+        JSON.stringify(updatedUser)
+      );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | SUCCESS MESSAGE
+    |--------------------------------------------------------------------------
+    */
+
+    setSuccessMessage(
+      response.data.message ||
+        "Profile berhasil diperbarui."
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | RESET FILE INPUT
+    |--------------------------------------------------------------------------
+    */
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | REDIRECT TO DASHBOARD
+    |--------------------------------------------------------------------------
+    */
+
+    setTimeout(() => {
+      router.push("/dashboard");
+    }, 800);
+
+  } catch (error: any) {
+    console.error(
+      "UPDATE PROFILE ERROR:",
+      error
+    );
+
+    const message =
+      error?.response?.data?.message ||
+      "Gagal memperbarui profile.";
+
+    setErrorMessage(message);
+
+    /*
+    |--------------------------------------------------------------------------
+    | TOKEN INVALID / EXPIRED
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      error?.response?.status === 401
+    ) {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(
+          "approval_token"
+        );
+
+        localStorage.removeItem(
+          "approval_user"
+        );
+      }
+
+      setErrorMessage(
+        "Session login sudah tidak valid. Silakan login kembali."
+      );
+    }
+  } finally {
+    setSaving(false);
+  }
+};
 
   /*
   |--------------------------------------------------------------------------
