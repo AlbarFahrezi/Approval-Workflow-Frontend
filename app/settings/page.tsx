@@ -403,45 +403,9 @@ export default function SettingsPage() {
 
           <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
 
-            <div className="border-b border-slate-100 p-7">
+            
 
-              <div className="flex items-center gap-3">
-
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-[#0B4EA2]">
-                  <span className="text-lg">☀</span>
-                </div>
-
-                <div>
-
-                  <h2 className="text-lg font-semibold text-slate-900">
-                    Tampilan
-                  </h2>
-
-                  <p className="mt-1 text-sm text-slate-500">
-                    Pengaturan tampilan aplikasi.
-                  </p>
-
-                </div>
-
-              </div>
-
-            </div>
-
-            <div className="px-7 py-6">
-
-              <div>
-
-                <p className="text-sm font-medium text-slate-800">
-                  Tampilan Standar
-                </p>
-
-                <p className="mt-1 text-xs text-slate-400">
-                  Aplikasi menggunakan tampilan terang standar.
-                </p>
-
-              </div>
-
-            </div>
+           
 
           </section>
 
@@ -468,37 +432,7 @@ export default function SettingsPage() {
 
           </div>
 
-          {/* LOGOUT */}
-
-          <section className="rounded-3xl border border-red-100 bg-white shadow-sm">
-
-            <div className="flex flex-col justify-between gap-6 p-7 sm:flex-row sm:items-center">
-
-              <div>
-
-                <h2 className="text-lg font-semibold text-slate-900">
-                  Keluar dari akun
-                </h2>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  Keluar dari sesi akun yang sedang digunakan.
-                </p>
-
-              </div>
-
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="flex shrink-0 items-center justify-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-100"
-              >
-                <LogOut size={18} />
-                Logout
-              </button>
-
-            </div>
-
-          </section>
-
+         
         </div>
       </div>
     </main>
